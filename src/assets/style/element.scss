@@ -1,0 +1,18 @@
+.el-pagination {
+  --el-pagination-button-width: 24px;
+  --el-pagination-button-height: 24px;
+  --el-pagination-button-font-size: 12px;
+
+  .el-input__wrapper {
+    height: 24px;
+  }
+}
+
+.el-form-item--small {
+  margin-bottom: 8px;
+}
+
+// 解决 el-form-item 出现错误提示时，底部 margin 增加的问题
+.is-error.el-form-item--small {
+  margin-bottom: 18px !important;
+}

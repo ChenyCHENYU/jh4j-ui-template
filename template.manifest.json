@@ -1,0 +1,39 @@
+{
+  "$schema": "./template-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "web.jh4j-mf-remote",
+  "name": "JH4J PC 微前端业务模板",
+  "description": "基于 Vue 3、Vite 和 Module Federation 的 JH4J 业务子系统标准模板",
+  "version": "1.0.0",
+  "category": "frontend",
+  "runtime": {
+    "node": "^22.12.0 || ^24.0.0",
+    "recommendedNode": "24",
+    "packageManager": "pnpm@11.8.0"
+  },
+  "defaults": {
+    "projectName": "jh4j-ui-app",
+    "moduleName": "app",
+    "title": "JH4J Cloud 数字化平台",
+    "devServerPort": 8001,
+    "localBackendUrl": "http://localhost:10010",
+    "localPublicUrl": "http://localhost:8002",
+    "npmRegistry": "https://registry.npmjs.org/",
+    "jhlcRegistry": "http://172.18.248.130/"
+  },
+  "parameters": [
+    { "name": "projectName", "type": "string", "required": true },
+    { "name": "moduleName", "type": "string", "required": true, "pattern": "^[a-z][a-z0-9-]*$" },
+    { "name": "title", "type": "string", "required": true },
+    { "name": "devServerPort", "type": "number", "required": true, "minimum": 1024, "maximum": 65535 },
+    { "name": "localBackendUrl", "type": "string", "required": true, "format": "uri" },
+    { "name": "localPublicUrl", "type": "string", "required": true, "format": "uri" },
+    { "name": "npmRegistry", "type": "string", "required": true },
+    { "name": "jhlcRegistry", "type": "string", "required": true }
+  ],
+  "entry": {
+    "interactive": "node scripts/setup-project.mjs",
+    "nonInteractive": "node scripts/setup-project.mjs --yes"
+  },
+  "generatedMetadata": ".jhlc/project.json"
+}

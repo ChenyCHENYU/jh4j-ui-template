@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">JH4J Cloud</title>
+  <desc id="description">JH4J Cloud default project icon</desc>
+  <defs>
+    <linearGradient id="background" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB" />
+      <stop offset="1" stop-color="#0F172A" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#background)" />
+  <path d="M18 16h8v23c0 8-4 11-12 10v-7c3 0 4-1 4-4V16Zm13 0h8v12h9V16h8v33h-8V36h-9v13h-8V16Z" fill="#FFFFFF" />
+  <circle cx="53" cy="11" r="4" fill="#38BDF8" />
+</svg>

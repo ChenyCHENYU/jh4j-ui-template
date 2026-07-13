@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover"
+    />
+    <title>JH4J Cloud 数字化平台</title>
+    <style>
+      html,
+      body,
+      #app {
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+      }
+
+      .chromeframe {
+        margin: 0.2em 0;
+        background: #ccc;
+        color: #000;
+        padding: 0.2em 0;
+      }
+
+      #loader-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 999999;
+        background: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #loaderImg {
+        position: relative;
+        width: 240px;
+        height: 240px;
+        margin-bottom: 28px;
+        z-index: 1001;
+      }
+
+      #loaderImg img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 0 30px rgba(64, 158, 255, 0.3));
+      }
+
+      .loadingStatus {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        z-index: 1005;
+      }
+
+      .loadingStatus span {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #409eff, #67c23a);
+        box-shadow: 0 0 20px rgba(64, 158, 255, 0.6);
+        animation: load 1.2s ease-in-out infinite;
+      }
+
+      @keyframes load {
+        0%,
+        100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+      }
+
+      .loadingStatus span:nth-child(1) {
+        animation-delay: 0s;
+      }
+
+      .loadingStatus span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .loadingStatus span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .loadingStatus span:nth-child(4) {
+        animation-delay: 0.45s;
+      }
+
+      .loadingStatus span:nth-child(5) {
+        animation-delay: 0.6s;
+      }
+
+      /* 背景装饰圆圈 */
+      .loader-bg-circle {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(64, 158, 255, 0.1);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .loader-bg-circle:nth-child(1) {
+        width: 300px;
+        height: 300px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .loader-bg-circle:nth-child(2) {
+        width: 400px;
+        height: 400px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-delay: 0.5s;
+      }
+
+      .loader-bg-circle:nth-child(3) {
+        width: 500px;
+        height: 500px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-delay: 1s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: translate(-50%, -50%) scale(1.05);
+        }
+      }
+
+      /* 加载文字 */
+      .loader-text {
+        position: relative;
+        z-index: 1005;
+        margin-top: clamp(32px, 4vh, 56px);
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        letter-spacing: 2px;
+        animation: fadeInOut 2s ease-in-out infinite;
+      }
+
+      @keyframes fadeInOut {
+        0%,
+        100% {
+          opacity: 0.4;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+
+      /* 加载完成动画 */
+      .loaded #loader-wrapper {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .loaded #loaderImg {
+        transform: scale(0.8);
+        opacity: 0;
+        transition: all 0.4s ease-out;
+      }
+
+      .loaded .loadingStatus {
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.4s ease-out;
+      }
+
+      .no-js #loader-wrapper {
+        display: none;
+      }
+
+      .no-js h1 {
+        color: #222222;
+      }
+      .child-popover {
+        margin-left: -10px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="loader-wrapper">
+        <div class="loader-bg-circle"></div>
+        <div class="loader-bg-circle"></div>
+        <div class="loader-bg-circle"></div>
+        <div id="loaderImg">
+          <img src="/logo.gif" alt="Loading" />
+        </div>
+        <div class="loadingStatus">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="loader-text">LOADING</div>
+      </div>
+    </div>
+    <svg
+      id="jh_svg_box"
+      style="position: absolute; width: 0px; height: 0px; overflow: hidden"
+    ></svg>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

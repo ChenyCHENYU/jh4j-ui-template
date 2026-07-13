@@ -1,0 +1,32 @@
+{
+  "projectName": "jh4j-ui-template",
+  "moduleName": "template",
+  "title": "JH4J Cloud 数字化平台",
+  "devServerPort": 8001,
+  "localBackendUrl": "http://localhost:10010",
+  "localPublicUrl": "http://localhost:8002",
+  "nodeServerUrl": "http://127.0.0.1:2000",
+  "localBackendRoutes": [],
+  "environments": {
+    "dev": {
+      "apiPrefix": "api",
+      "webUrl": "http://localhost:8080"
+    },
+    "sit": {
+      "apiPrefix": "sit-api",
+      "webUrl": "http://localhost:8080"
+    },
+    "uat": {
+      "apiPrefix": "uat-api",
+      "webUrl": "http://localhost:8080"
+    },
+    "pre": {
+      "apiPrefix": "pre-api",
+      "webUrl": "http://localhost:8080"
+    },
+    "prd": {
+      "apiPrefix": "prod-api",
+      "webUrl": "http://localhost:8080"
+    }
+  }
+}
