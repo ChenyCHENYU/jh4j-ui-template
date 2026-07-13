@@ -150,7 +150,7 @@ async function renameModuleDirectory(fromModule, toModule) {
 }
 
 function buildNpmrc(npmRegistry, jhlcRegistry) {
-  return `# 由 pnpm setup 或 @jhlc/jh4j-cloud-cli 根据项目配置生成。\n# pnpm 11 的非 registry 设置统一维护在 pnpm-workspace.yaml。\nregistry=${npmRegistry}/\n@jhlc:registry=${jhlcRegistry}/\n`;
+  return `# 由 pnpm setup 或 @agile-team/jh4j-cloud-cli 根据项目配置生成。\n# pnpm 11 的非 registry 设置统一维护在 pnpm-workspace.yaml。\nregistry=${npmRegistry}/\n@jhlc:registry=${jhlcRegistry}/\n`;
 }
 
 async function removeGitStandards(pkg) {

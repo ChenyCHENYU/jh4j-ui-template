@@ -1,7 +1,7 @@
 # jh4j-ui-template
 
 > **JH4J Cloud 基于 Vue 3 + Vite + Module Federation 的 PC 业务子系统标准模板。**
-> 模板既支持由 `@jhlc/jh4j-cloud-cli` 拉取并非交互初始化，也支持直接 `git clone` 后运行内置初始化命令；两种方式使用同一份配置契约。
+> 模板既支持由 `@agile-team/jh4j-cloud-cli` 拉取并非交互初始化，也支持直接 `git clone` 后运行内置初始化命令；两种方式使用同一份配置契约。
 
 ---
 
@@ -36,7 +36,7 @@ pnpm setup
 脚手架或 CI 可使用非交互模式：
 
 ```bash
-pnpm setup -- --yes --config ./project-input.json --created-by @jhlc/jh4j-cloud-cli@0.3.0
+pnpm setup -- --yes --config ./project-input.json --created-by @agile-team/jh4j-cloud-cli@0.3.0
 ```
 
 默认启用完整的 `@robot-admin/git-standards`，包含 Commitizen、Commitlint、Husky、ESLint、Prettier 和 lint-staged。直接 clone 时如明确不需要，可执行：
