@@ -77,7 +77,7 @@ pnpm build:uat      # uat 环境构建
 
 ## 基于模板创建新业务系统
 
-> 不再建议复制目录后逐文件查找替换。直接 clone 时运行 `pnpm setup`；未来内部脚手架将读取 `template.manifest.json` 并调用同一初始化入口。
+> 不建议复制目录后逐文件查找替换。直接 clone 时运行 `pnpm setup`；通过 JH4J Cloud CLI 创建时，会读取 `template.manifest.json` 并调用同一初始化入口。
 
 ### 方式一：直接 clone
 
