@@ -1,6 +1,8 @@
 shamefullyHoist: true
 strictPeerDependencies: false
-minimumReleaseAge: 0
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@jhlc/*"
 
 # pnpm 11 默认拒绝未审查的依赖构建脚本，只允许模板确认需要的构建步骤。
 allowBuilds:
