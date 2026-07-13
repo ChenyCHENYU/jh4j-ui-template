@@ -93,6 +93,22 @@ async function main() {
   if (!existsSync(path.join(root, "src", "views", config.moduleName))) {
     errors.push(`缺少模板业务目录 src/views/${config.moduleName}`);
   }
+  const featureIds = new Set();
+  for (const feature of manifest.features ?? []) {
+    if (!/^[a-z][a-z0-9-]*$/.test(feature.id) || featureIds.has(feature.id)) {
+      errors.push(`模板能力 id 无效或重复: ${feature.id}`);
+    }
+    featureIds.add(feature.id);
+    if (feature.defaultEnabled && !config.features?.includes(feature.id)) {
+      errors.push(`默认模板能力未写入 project.config.json: ${feature.id}`);
+    }
+    if (feature.package && !pkg.devDependencies?.[feature.package]) {
+      errors.push(`模板能力 ${feature.id} 缺少依赖 ${feature.package}`);
+    }
+  }
+  for (const script of ["lint", "lint:fix", "typecheck", "format:check", "check"]) {
+    if (!pkg.scripts?.[script]) errors.push(`package.json 缺少质量命令: ${script}`);
+  }
 
   for (const env of ENV_NAMES) {
     const item = config.environments?.[env];

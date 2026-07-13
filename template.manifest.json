@@ -4,7 +4,7 @@
   "id": "web.jh4j-mf-remote",
   "name": "JH4J PC 微前端业务模板",
   "description": "基于 Vue 3、Vite 和 Module Federation 的 JH4J 业务子系统标准模板",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "category": "frontend",
   "runtime": {
     "node": "^22.12.0 || ^24.0.0",
@@ -18,9 +18,19 @@
     "devServerPort": 8001,
     "localBackendUrl": "http://localhost:10010",
     "localPublicUrl": "http://localhost:8002",
-    "npmRegistry": "https://registry.npmjs.org/",
+    "npmRegistry": "http://172.18.248.130/",
     "jhlcRegistry": "http://172.18.248.130/"
   },
+  "features": [
+    {
+      "id": "git-standards",
+      "name": "完整 Git 与代码质量规范",
+      "description": "Commitizen、Commitlint、Husky、ESLint、Prettier 与 lint-staged",
+      "defaultEnabled": true,
+      "required": false,
+      "package": "@robot-admin/git-standards"
+    }
+  ],
   "parameters": [
     { "name": "projectName", "type": "string", "required": true },
     { "name": "moduleName", "type": "string", "required": true, "pattern": "^[a-z][a-z0-9-]*$" },

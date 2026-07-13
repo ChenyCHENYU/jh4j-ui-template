@@ -1,7 +1,7 @@
 # jh4j-ui-template
 
 > **JH4J Cloud 基于 Vue 3 + Vite + Module Federation 的 PC 业务子系统标准模板。**
-> 模板既支持未来由 `@jhlc/cli` 拉取并非交互初始化，也支持直接 `git clone` 后运行内置初始化命令；两种方式使用同一份配置契约。
+> 模板既支持由 `@jhlc/jh4j-cloud-cli` 拉取并非交互初始化，也支持直接 `git clone` 后运行内置初始化命令；两种方式使用同一份配置契约。
 
 ---
 
@@ -36,8 +36,16 @@ pnpm setup
 脚手架或 CI 可使用非交互模式：
 
 ```bash
-pnpm setup -- --yes --config ./project-input.json --created-by @jhlc/cli@1.0.0
+pnpm setup -- --yes --config ./project-input.json --created-by @jhlc/jh4j-cloud-cli@0.3.0
 ```
+
+默认启用完整的 `@robot-admin/git-standards`，包含 Commitizen、Commitlint、Husky、ESLint、Prettier 和 lint-staged。直接 clone 时如明确不需要，可执行：
+
+```bash
+pnpm setup -- --yes --no-standards
+```
+
+禁用该能力会同时移除对应配置、开发依赖和模板 lockfile；随后执行 `pnpm install` 会按精简后的 `package.json` 生成新的 lockfile。
 
 初始化只修改结构化配置、项目名称、业务目录和 `.jhlc/project.json`，不会修改业务代码。
 
@@ -47,7 +55,7 @@ pnpm setup -- --yes --config ./project-input.json --created-by @jhlc/cli@1.0.0
 pnpm install
 ```
 
-> 首次安装前请确认 `.npmrc` 中的 `@jhlc` 私有源可访问。初始化命令会让使用者确认该地址。
+> 首次安装前请确认 `.npmrc` 中的内部 npm 源可访问。模板包含 `element-plus` 企业定制版本等非 scope 包，不能只把 `@jhlc` 指向内部源。
 
 ### 3. 启动开发服务器
 
@@ -81,10 +89,12 @@ pnpm install
 pnpm dev
 ```
 
-### 方式二：内部脚手架（规划）
+### 方式二：内部脚手架
 
 ```bash
-jhlc create my-project --template web.jh4j-mf-remote
+jh4j create my-project
+jh4j create my-project --template web.jh4j-mf-remote
+jh4j create my-project --yes --no-standards
 ```
 
 项目级配置统一保存在 `project.config.json`：
@@ -96,6 +106,7 @@ jhlc create my-project --template web.jh4j-mf-remote
 | `title` | 浏览器标题和平台运行时标题 |
 | `devServerPort` | 本地开发端口 |
 | `environments` | DEV/SIT/UAT/PRE/PRD 地址与 API 前缀 |
+| `features` | 脚手架选中的标准化能力 ID |
 
 生成来源和模板版本保存在 `.jhlc/project.json`，业务开发者不应手动修改模板来源字段。
 

@@ -13,6 +13,22 @@
     "category": { "enum": ["frontend", "backend", "mobile"] },
     "runtime": { "type": "object" },
     "defaults": { "type": "object" },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "defaultEnabled"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "defaultEnabled": { "type": "boolean" },
+          "required": { "type": "boolean" },
+          "package": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
     "parameters": { "type": "array" },
     "entry": { "type": "object" },
     "generatedMetadata": { "type": "string" }

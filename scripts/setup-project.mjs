@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -13,6 +13,33 @@ const npmrcPath = path.join(root, ".npmrc");
 const readmePath = path.join(root, "README.md");
 
 const ENV_NAMES = ["dev", "sit", "uat", "pre", "prd"];
+const GIT_STANDARDS_FEATURE = "git-standards";
+const GIT_STANDARDS_FILES = [
+  ".cz-config.js",
+  ".editorconfig",
+  ".husky",
+  ".prettierrc",
+  "commitlint.config.js",
+  "eslint.config.js",
+  "pnpm-lock.yaml"
+];
+const GIT_STANDARDS_DEV_DEPENDENCIES = [
+  "@commitlint/cli",
+  "@commitlint/config-conventional",
+  "@robot-admin/git-standards",
+  "@typescript-eslint/eslint-plugin",
+  "@typescript-eslint/parser",
+  "@vue/eslint-config-prettier",
+  "@vue/eslint-config-typescript",
+  "commitizen",
+  "cz-customizable",
+  "eslint",
+  "eslint-plugin-vue",
+  "husky",
+  "lint-staged",
+  "prettier",
+  "vue-eslint-parser"
+];
 
 async function readJson(file) {
   return JSON.parse(await readFile(file, "utf8"));
@@ -126,10 +153,39 @@ function buildNpmrc(npmRegistry, jhlcRegistry) {
   return `# 由 pnpm setup 或 @jhlc/jh4j-cloud-cli 根据项目配置生成。\n# pnpm 11 的非 registry 设置统一维护在 pnpm-workspace.yaml。\nregistry=${npmRegistry}/\n@jhlc:registry=${jhlcRegistry}/\n`;
 }
 
+async function removeGitStandards(pkg) {
+  const next = structuredClone(pkg);
+  for (const dependency of GIT_STANDARDS_DEV_DEPENDENCIES) {
+    delete next.devDependencies?.[dependency];
+  }
+  for (const script of [
+    "prepare",
+    "cz",
+    "lint",
+    "lint:fix",
+    "format",
+    "format:check"
+  ]) {
+    delete next.scripts?.[script];
+  }
+  next.scripts.check = "pnpm typecheck";
+  delete next["lint-staged"];
+  if (next.config) {
+    delete next.config.commitizen;
+    if (!Object.keys(next.config).length) delete next.config;
+  }
+  await Promise.all(
+    GIT_STANDARDS_FILES.map((file) =>
+      rm(path.join(root, file), { recursive: true, force: true })
+    )
+  );
+  return next;
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log(`jh4j-ui-template 初始化\n\n用法:\n  pnpm setup\n  pnpm setup -- --yes --config ./project-input.json\n\n常用参数:\n  --project-name <name>\n  --module <module>\n  --title <title>\n  --port <port>\n  --npm-registry <url>\n  --jhlc-registry <url>\n  --local-backend <url>\n  --local-public <url>\n  --config <json-file>\n  --configure-environments\n  --created-by <source>\n  --yes`);
+    console.log(`jh4j-ui-template 初始化\n\n用法:\n  pnpm setup\n  pnpm setup -- --yes --config ./project-input.json\n\n常用参数:\n  --project-name <name>\n  --module <module>\n  --title <title>\n  --port <port>\n  --npm-registry <url>\n  --jhlc-registry <url>\n  --local-backend <url>\n  --local-public <url>\n  --no-standards\n  --config <json-file>\n  --configure-environments\n  --created-by <source>\n  --yes`);
     return;
   }
 
@@ -204,6 +260,16 @@ async function main() {
       "localPublicUrl",
       projectConfig.localPublicUrl
     );
+    let features = Array.isArray(input.features)
+      ? [...input.features]
+      : Array.isArray(projectConfig.features)
+        ? [...projectConfig.features]
+        : (manifest.features ?? [])
+            .filter((feature) => feature.defaultEnabled || feature.required)
+            .map((feature) => feature.id);
+    if (options["no-standards"]) {
+      features = features.filter((feature) => feature !== GIT_STANDARDS_FEATURE);
+    }
 
     if (interactive) {
       console.log("\nJH4J PC 模板初始化。直接回车即可接受当前默认值。\n");
@@ -211,17 +277,25 @@ async function main() {
       moduleName = await ask(rl, "模块标识", moduleName);
       title = await ask(rl, "系统标题", title);
       port = await ask(rl, "开发端口", port);
-      npmRegistry = await ask(rl, "公共 npm registry", npmRegistry);
+      npmRegistry = await ask(rl, "npm registry", npmRegistry);
       jhlcRegistry = await ask(rl, "@jhlc 私有 registry", jhlcRegistry);
       localBackendUrl = await ask(rl, "本地后端地址", localBackendUrl);
       localPublicUrl = await ask(rl, "本地 public 地址", localPublicUrl);
+      const useGitStandards = await askBoolean(
+        rl,
+        "是否启用完整 Git 与代码质量规范",
+        features.includes(GIT_STANDARDS_FEATURE)
+      );
+      features = useGitStandards
+        ? [...new Set([...features, GIT_STANDARDS_FEATURE])]
+        : features.filter((feature) => feature !== GIT_STANDARDS_FEATURE);
     }
 
     projectName = validateProjectName(projectName);
     moduleName = validateModuleName(moduleName);
     title = required(title, "系统标题");
     port = validatePort(port);
-    npmRegistry = validateUrl(npmRegistry, "公共 npm registry");
+    npmRegistry = validateUrl(npmRegistry, "npm registry");
     jhlcRegistry = validateUrl(jhlcRegistry, "@jhlc 私有 registry");
     localBackendUrl = validateUrl(localBackendUrl, "本地后端地址");
     localPublicUrl = validateUrl(localPublicUrl, "本地 public 地址");
@@ -239,6 +313,7 @@ async function main() {
       devServerPort: port,
       localBackendUrl,
       localPublicUrl,
+      features,
       environments: {
         ...projectConfig.environments,
         ...(input.environments ?? {})
@@ -274,7 +349,10 @@ async function main() {
     const oldModuleName = projectConfig.moduleName;
     await renameModuleDirectory(oldModuleName, moduleName);
     await writeJson(projectConfigPath, nextConfig);
-    await writeJson(packagePath, { ...pkg, name: projectName });
+    const nextPackage = features.includes(GIT_STANDARDS_FEATURE)
+      ? { ...pkg, name: projectName }
+      : { ...(await removeGitStandards(pkg)), name: projectName };
+    await writeJson(packagePath, nextPackage);
     await writeFile(npmrcPath, buildNpmrc(npmRegistry, jhlcRegistry), "utf8");
     if (existsSync(readmePath)) {
       const readme = await readFile(readmePath, "utf8");
@@ -299,7 +377,8 @@ async function main() {
         title,
         devServerPort: port,
         localBackendUrl,
-        localPublicUrl
+        localPublicUrl,
+        features
       }
     });
 
@@ -308,6 +387,9 @@ async function main() {
     console.log(`  模块标识: ${moduleName}`);
     console.log(`  系统标题: ${title}`);
     console.log(`  开发端口: ${port}`);
+    console.log(
+      `  标准能力: ${features.length ? features.join(", ") : "未启用"}`
+    );
     console.log("\n下一步：pnpm install && pnpm dev\n");
   } finally {
     rl?.close();

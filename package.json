@@ -1,7 +1,12 @@
 {
   "name": "jh4j-ui-template",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ChenyCHENYU/jh4j-ui-template.git"
+  },
+  "homepage": "https://github.com/ChenyCHENYU/jh4j-ui-template#readme",
   "engines": {
     "node": "^22.12.0 || ^24.0.0",
     "pnpm": ">=11.8.0"
@@ -23,7 +28,12 @@
     "postinstall": "node scripts/patch-common-core-dts.mjs",
     "prepare": "husky",
     "cz": "git-cz",
-    "lint": "eslint . --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "vue-tsc --noEmit",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check"
   },
   "dependencies": {
     "@jhlc/common-core": "3.1.0-prod.14",
@@ -53,7 +63,7 @@
     "@robot-admin/git-standards": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "4.3.4",
     "@vitejs/plugin-vue-jsx": "~1.3.10",
     "@vue/eslint-config-prettier": "^9.0.0",
