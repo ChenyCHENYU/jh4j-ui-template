@@ -36,6 +36,7 @@ export interface ViteContext {
   baseApi: string;
   webUrl: string;
   webApi: string;
+  apiServer: string;
   localBackendUrl: string;
   localPublicUrl: string;
   anyReportServer: string;
@@ -120,6 +121,9 @@ export function resolveViteContext(
   const baseApi =
     "/" + normalizeApiPrefix(rawEnv["ENV_API_PREFIX"] || environment.apiPrefix);
   const webApi = `${webUrl}${baseApi}`;
+  const apiServer = removeTrailingSlash(
+    rawEnv["ENV_API_SERVER"] || (environment as any).apiServer || webUrl
+  );
   const useLocalBackend = backendSource === "local";
   const isPublicLocal = publicSource === "local";
   const devMode: DevMode = isPublicLocal
@@ -141,7 +145,8 @@ export function resolveViteContext(
     ...getEnvOption(target),
     version,
     webUrl,
-    webApi
+    webApi,
+    apiServer
   };
 
   const runtimeEnv: RuntimeEnvironment = {
@@ -172,6 +177,7 @@ export function resolveViteContext(
     baseApi,
     webUrl,
     webApi,
+    apiServer,
     localBackendUrl: removeTrailingSlash(
       rawEnv["ENV_LOCAL_API"] || APP_CONFIG.defaultLocalBackendUrl
     ),

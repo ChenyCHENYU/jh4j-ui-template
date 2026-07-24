@@ -50,13 +50,19 @@ function createProxyConfig(context: ViteContext) {
     ])
   );
 
+  const isSeparateApiServer = Boolean(context.apiServer) && context.apiServer !== context.webUrl;
+  const baseApiRewrite = isSeparateApiServer
+    ? (path: string) => path.replace(new RegExp(`^${escapeRegExp(context.baseApi)}`), "")
+    : undefined;
+
   return {
     // 具体业务路由必须位于 baseApi 通配代理之前。
     ...moduleProxies,
     [context.baseApi]: {
-      target: context.webUrl,
+      target: context.apiServer || context.webUrl,
       changeOrigin: true,
-      secure: false
+      secure: false,
+      ...(baseApiRewrite ? { rewrite: baseApiRewrite } : {})
     },
     "/assets": {
       target: context.isPublicLocal ? context.localPublicUrl : context.webUrl,

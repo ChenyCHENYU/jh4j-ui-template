@@ -6,6 +6,7 @@ type HttpUrl = `http://${string}` | `https://${string}`;
 interface EnvironmentConfig {
   apiPrefix: string;
   webUrl: HttpUrl;
+  apiServer?: HttpUrl;
 }
 
 export const ENVIRONMENTS = projectConfig.environments as Record<
