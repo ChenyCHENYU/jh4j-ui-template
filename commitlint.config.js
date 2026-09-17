@@ -5,17 +5,27 @@
  * 直接修改此文件即可自定义提交校验规则
  */
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  extends: ["@commitlint/config-conventional"],
   rules: {
-    'type-enum': [
+    "type-enum": [
       2,
-      'always',
+      "always",
       [
-        'wip', 'feat', 'fix', 'docs', 'style', 'refactor',
-        'perf', 'test', 'chore', 'revert', 'build', 'deps',
-      ],
+        "wip",
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "chore",
+        "revert",
+        "build",
+        "deps"
+      ]
     ],
-    'scope-empty': [2, 'never'],
-    'subject-case': [0],
-  },
-}
+    "scope-empty": [2, "never"],
+    "subject-case": [0]
+  }
+};

@@ -6,6 +6,7 @@ export const APP_ENVS = ["dev", "sit", "uat", "pre", "prd"] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
 
 export const APP_CONFIG = {
+  projectName: projectConfig.projectName,
   moduleName: projectConfig.moduleName,
   devServerPort: projectConfig.devServerPort,
   defaultTitle: projectConfig.title,

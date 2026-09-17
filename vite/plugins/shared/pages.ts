@@ -23,9 +23,6 @@ const businessModule = gProd(APP_CONFIG.moduleName, {
   ]
 });
 
-export const list: SharedPageItem[] = [
-  ...moduleStylePages,
-  ...businessModule
-];
+export const list: SharedPageItem[] = [...moduleStylePages, ...businessModule];
 
 export default list;

@@ -1,6 +1,6 @@
 {
   "name": "jh4j-ui-template",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -30,12 +30,13 @@
     "cz": "git-cz",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "node scripts/typecheck.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check"
   },
   "dependencies": {
+    "@agile-team/wl-skills-ui": "^1.11.1",
     "@jhlc/common-core": "3.1.0-prod.14",
     "@jhlc/types": "3.1.0",
     "@element-plus/icons-vue": "2.1.0",
@@ -51,9 +52,9 @@
     "vue": "~3.2.25",
     "vue-i18n": "9.13.1",
     "vue-router": "4.4.3",
-    "windicss": "^3.5.6",
     "file-saver": "^2.0.5",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -85,7 +86,6 @@
     "vite": "4.4.9",
     "vite-plugin-svg-icons": "^2.0.1",
     "vite-plugin-top-level-await": "1.6.0-prod.1",
-    "vite-plugin-windicss": "^1.8.10",
     "vue-eslint-parser": "^9.4.3",
     "vue-tsc": "^2.0.0"
   },

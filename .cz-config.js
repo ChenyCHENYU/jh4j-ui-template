@@ -10,33 +10,33 @@ module.exports = {
   allowCustomScopes: true,
 
   types: [
-    { value: 'wip', name: 'wip:      🚧 开发中' },
-    { value: 'feat', name: 'feat:     🎯 新功能' },
-    { value: 'fix', name: 'fix:      🐛 Bug 修复' },
-    { value: 'perf', name: 'perf:     ⚡️ 性能优化' },
-    { value: 'deps', name: 'deps:     📦 依赖更新' },
-    { value: 'refactor', name: 'refactor: ♻️  重构' },
-    { value: 'docs', name: 'docs:     📚 文档变更' },
-    { value: 'test', name: 'test:     🔎 测试相关' },
-    { value: 'style', name: 'style:    💄 代码样式' },
-    { value: 'build', name: 'build:    🧳 构建/打包' },
-    { value: 'chore', name: 'chore:    🔧 其他杂项' },
-    { value: 'revert', name: 'revert:   🔙 回退' },
+    { value: "wip", name: "wip:      🚧 开发中" },
+    { value: "feat", name: "feat:     🎯 新功能" },
+    { value: "fix", name: "fix:      🐛 Bug 修复" },
+    { value: "perf", name: "perf:     ⚡️ 性能优化" },
+    { value: "deps", name: "deps:     📦 依赖更新" },
+    { value: "refactor", name: "refactor: ♻️  重构" },
+    { value: "docs", name: "docs:     📚 文档变更" },
+    { value: "test", name: "test:     🔎 测试相关" },
+    { value: "style", name: "style:    💄 代码样式" },
+    { value: "build", name: "build:    🧳 构建/打包" },
+    { value: "chore", name: "chore:    🔧 其他杂项" },
+    { value: "revert", name: "revert:   🔙 回退" }
   ],
 
   messages: {
-    type: '请选择提交类型:',
-    customScope: '请输入修改范围(必填，格式如：模块/子模块):',
-    subject: '请简要描述提交(必填，不加句号):',
-    body: '请输入更详细的说明(可选):\n',
+    type: "请选择提交类型:",
+    customScope: "请输入修改范围(必填，格式如：模块/子模块):",
+    subject: "请简要描述提交(必填，不加句号):",
+    body: "请输入更详细的说明(可选):\n",
     footer: 'Footer(可选): 例如 "Closes #123" 或 "Release-As: 1.3.1"\n',
-    confirmCommit: '确认提交以上内容？(y/n/e/h)',
+    confirmCommit: "确认提交以上内容？(y/n/e/h)"
   },
 
-  skipQuestions: ['body'],
+  skipQuestions: ["body"],
 
-  allowBreakingChanges: ['feat', 'fix', 'refactor'],
-  breakingPrefix: 'BREAKING CHANGE:',
+  allowBreakingChanges: ["feat", "fix", "refactor"],
+  breakingPrefix: "BREAKING CHANGE:",
 
-  subjectLimit: 88,
-}
+  subjectLimit: 88
+};

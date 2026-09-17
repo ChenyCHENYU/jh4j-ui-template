@@ -50,9 +50,11 @@ function createProxyConfig(context: ViteContext) {
     ])
   );
 
-  const isSeparateApiServer = Boolean(context.apiServer) && context.apiServer !== context.webUrl;
+  const isSeparateApiServer =
+    Boolean(context.apiServer) && context.apiServer !== context.webUrl;
   const baseApiRewrite = isSeparateApiServer
-    ? (path: string) => path.replace(new RegExp(`^${escapeRegExp(context.baseApi)}`), "")
+    ? (path: string) =>
+        path.replace(new RegExp(`^${escapeRegExp(context.baseApi)}`), "")
     : undefined;
 
   return {

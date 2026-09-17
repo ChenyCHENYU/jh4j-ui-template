@@ -1,3 +1,157 @@
+// wl-skills-ui 视觉对齐（L0 token + L1 Element Plus + L2 封装组件 + L3 页面骨架）
+@use "@agile-team/wl-skills-ui/styles" as *;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 基础样式重置（等效原 windicss preflight，2026-09 退出 windicss 时迁入）
+//
+// windicss 已移除，但其默认 preflight 在线上运行多年，以下规则从原构建产物
+// 中逐条提取，保持视觉零变化。原产物中的 --tw-ring/--tw-shadow 变量与
+// safe-list 死类（.flex/.border 等 !important 类）经全量扫描确认无任何
+// 消费方，未迁入。
+// ─────────────────────────────────────────────────────────────────────────────
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+:root {
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+}
+
+:-moz-focusring {
+  outline: 1px dotted ButtonText;
+}
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+::-moz-focus-inner {
+  border-style: none;
+  padding: 0;
+}
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+[type="search"] {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+abbr[title] {
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted;
+}
+
+body {
+  margin: 0;
+  font-family: inherit;
+  line-height: inherit;
+}
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji";
+  line-height: 1.5;
+}
+
+h3,
+h4 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+input {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+
+img {
+  border-style: solid;
+  max-width: 100%;
+  height: auto;
+}
+
+input::placeholder {
+  opacity: 1;
+  color: #9ca3af;
+}
+
+img,
+svg {
+  display: block;
+  vertical-align: middle;
+}
+
+pre {
+  font-size: 1em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+pre,
+h3,
+h4 {
+  margin: 0;
+}
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 全局布局样式
+// ─────────────────────────────────────────────────────────────────────────────
+
 .hasTagsView .app-main {
   min-height: calc(100vh - 84px) !important;
 }
@@ -170,7 +324,9 @@ body > .el-loading-mask {
     font-weight: 600;
     line-height: 1;
     vertical-align: middle;
-    transition: background 0.2s, color 0.2s;
+    transition:
+      background 0.2s,
+      color 0.2s;
   }
 
   :deep(.el-tabs__item.is-active .page-tabs__badge) {

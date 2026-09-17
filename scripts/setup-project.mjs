@@ -89,7 +89,9 @@ function validateProjectName(value) {
 function validateModuleName(value) {
   const name = required(value, "模块标识");
   if (!/^[a-z][a-z0-9-]*$/.test(name)) {
-    throw new Error("模块标识必须以小写字母开头，只能包含小写字母、数字和连字符");
+    throw new Error(
+      "模块标识必须以小写字母开头，只能包含小写字母、数字和连字符"
+    );
   }
   return name;
 }
@@ -121,7 +123,9 @@ async function ask(rl, label, current) {
 
 async function askBoolean(rl, label, defaultValue = false) {
   const hint = defaultValue ? "Y/n" : "y/N";
-  const answer = (await rl.question(`${label} (${hint}): `)).trim().toLowerCase();
+  const answer = (await rl.question(`${label} (${hint}): `))
+    .trim()
+    .toLowerCase();
   if (!answer) return defaultValue;
   return answer === "y" || answer === "yes";
 }
@@ -150,7 +154,7 @@ async function renameModuleDirectory(fromModule, toModule) {
 }
 
 function buildNpmrc(npmRegistry, jhlcRegistry) {
-  return `# 由 pnpm setup 或 @agile-team/jh4j-cloud-cli 根据项目配置生成。\n# pnpm 11 的非 registry 设置统一维护在 pnpm-workspace.yaml。\nregistry=${npmRegistry}/\n@jhlc:registry=${jhlcRegistry}/\n`;
+  return `# 由 pnpm setup 或 @agile-team/jh4j-cloud-cli 根据项目配置生成。\n# pnpm 11 的非 registry 设置统一维护在 pnpm-workspace.yaml。\nregistry=${npmRegistry}/\n@jhlc:registry=${jhlcRegistry}/\n@agile-team:registry=${npmRegistry}/\n`;
 }
 
 async function removeGitStandards(pkg) {
@@ -185,7 +189,9 @@ async function removeGitStandards(pkg) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log(`jh4j-ui-template 初始化\n\n用法:\n  pnpm setup\n  pnpm setup -- --yes --config ./project-input.json\n\n常用参数:\n  --project-name <name>\n  --module <module>\n  --title <title>\n  --port <port>\n  --npm-registry <url>\n  --jhlc-registry <url>\n  --local-backend <url>\n  --local-public <url>\n  --no-standards\n  --config <json-file>\n  --configure-environments\n  --created-by <source>\n  --yes`);
+    console.log(
+      `jh4j-ui-template 初始化\n\n用法:\n  pnpm setup\n  pnpm setup -- --yes --config ./project-input.json\n\n常用参数:\n  --project-name <name>\n  --module <module>\n  --title <title>\n  --port <port>\n  --npm-registry <url>\n  --jhlc-registry <url>\n  --local-backend <url>\n  --local-public <url>\n  --no-standards\n  --config <json-file>\n  --configure-environments\n  --created-by <source>\n  --yes`
+    );
     return;
   }
 
@@ -196,7 +202,8 @@ async function main() {
     loadInputFile(options.config)
   ]);
 
-  const interactive = process.stdin.isTTY && process.stdout.isTTY && !options.yes;
+  const interactive =
+    process.stdin.isTTY && process.stdout.isTTY && !options.yes;
   const rl = interactive
     ? createInterface({ input: process.stdin, output: process.stdout })
     : null;
@@ -224,7 +231,13 @@ async function main() {
       "moduleName",
       projectConfig.moduleName
     );
-    let title = argOrInput(options, input, "title", "title", projectConfig.title);
+    let title = argOrInput(
+      options,
+      input,
+      "title",
+      "title",
+      projectConfig.title
+    );
     let port = argOrInput(
       options,
       input,
@@ -268,7 +281,9 @@ async function main() {
             .filter((feature) => feature.defaultEnabled || feature.required)
             .map((feature) => feature.id);
     if (options["no-standards"]) {
-      features = features.filter((feature) => feature !== GIT_STANDARDS_FEATURE);
+      features = features.filter(
+        (feature) => feature !== GIT_STANDARDS_FEATURE
+      );
     }
 
     if (interactive) {
@@ -325,7 +340,8 @@ async function main() {
       ENV_NAMES.some(
         (env) => options[`${env}-url`] || options[`${env}-api-prefix`]
       ) ||
-      (interactive && (await askBoolean(rl, "是否逐项确认五套环境地址", false)));
+      (interactive &&
+        (await askBoolean(rl, "是否逐项确认五套环境地址", false)));
 
     for (const env of ENV_NAMES) {
       const current = nextConfig.environments[env];

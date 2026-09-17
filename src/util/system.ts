@@ -9,22 +9,28 @@ import { GlobalComponent } from "@jhlc/common-core/src/global/global-components"
 import { systemModules } from "@/types/jh4j-cloud";
 import { getEnv } from "@/util/jh4j";
 
-export const federation_method_getRemote = function(module: string, path: string) {
+export const federation_method_getRemote = function (
+  module: string,
+  path: string
+) {
   return __federation_method_getRemote(module, path);
 };
 
-export const federation_method_unwrapDefault = function(moduleWrapped: any) {
+export const federation_method_unwrapDefault = function (moduleWrapped: any) {
   return __federation_method_unwrapDefault(moduleWrapped);
 };
 
-export const federation_method_setRemote = function(module: string, config: any) {
+export const federation_method_setRemote = function (
+  module: string,
+  config: any
+) {
   return __federation_method_setRemote(module, config);
 };
 
 let remoteFetchFlag: Record<string, boolean> = {};
 const styleMap: Record<string, boolean> = {};
 
-const getEntry = function(module: string) {
+const getEntry = function (module: string) {
   const env = getEnv();
   return new Promise((resolve) => {
     const filename = "remoteEntry.js";
@@ -35,11 +41,16 @@ const getEntry = function(module: string) {
           : `/sub/${module}/assets/${filename}?t=${new Date().getTime()}`
       );
     }
-    return resolve(`/sub/${module}/assets/${filename}?v=${new Date().getTime()}`);
+    return resolve(
+      `/sub/${module}/assets/${filename}?v=${new Date().getTime()}`
+    );
   });
 };
 
-const updateRemoteAndFetch = function(module: string, path: string): Promise<any> {
+const updateRemoteAndFetch = function (
+  module: string,
+  path: string
+): Promise<any> {
   return getEntry(module).then((url) => {
     federation_method_setRemote(module, {
       url: () => Promise.resolve(url),
@@ -52,7 +63,7 @@ const updateRemoteAndFetch = function(module: string, path: string): Promise<any
   });
 };
 
-const doFetchAsyncComponent = async function(
+const doFetchAsyncComponent = async function (
   module: string,
   path: string,
   isRemote?: boolean
@@ -137,7 +148,7 @@ const doFetchAsyncComponent = async function(
   });
 };
 
-export const fetchAsyncComponent = function(
+export const fetchAsyncComponent = function (
   module: string,
   path: string,
   fetchPath?: () => Promise<[string, string]>,
@@ -169,11 +180,14 @@ export const fetchAsyncComponent = function(
 type DevFetchComponent = (module: string, path: string) => Promise<any>;
 
 let devFetchComponent: DevFetchComponent | null = null;
-export const setDevFetchComponent = function(fun: DevFetchComponent) {
+export const setDevFetchComponent = function (fun: DevFetchComponent) {
   devFetchComponent = fun;
 };
 
-export const fetchComponent = function(module: string, path: string): Promise<any> {
+export const fetchComponent = function (
+  module: string,
+  path: string
+): Promise<any> {
   if (typeof devFetchComponent === "function") {
     return devFetchComponent(module, path);
   }
@@ -183,7 +197,7 @@ export const fetchComponent = function(module: string, path: string): Promise<an
   });
 };
 
-export const fetchRemoteComponent = function(
+export const fetchRemoteComponent = function (
   module: string,
   path: string
 ): Promise<any> {

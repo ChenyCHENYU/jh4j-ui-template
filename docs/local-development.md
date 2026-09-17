@@ -2,11 +2,11 @@
 
 ## 三种开发方式
 
-| 场景                 | 命令              | public 来源             | 当前模块服务             |
-| -------------------- | ----------------- | ----------------------- | ------------------------ |
-| 本地连接目标环境     | `pnpm dev`        | `project.config.json`   | `project.config.json`    |
-| 本地连接本地后端     | `pnpm dev:local`  | 目标环境                | `http://localhost:10010` |
-| 本地联调 public      | `pnpm dev:public` | `http://localhost:8002` | 目标环境                 |
+| 场景             | 命令              | public 来源             | 当前模块服务             |
+| ---------------- | ----------------- | ----------------------- | ------------------------ |
+| 本地连接目标环境 | `pnpm dev`        | `project.config.json`   | `project.config.json`    |
+| 本地连接本地后端 | `pnpm dev:local`  | 目标环境                | `http://localhost:10010` |
+| 本地联调 public  | `pnpm dev:public` | `http://localhost:8002` | 目标环境                 |
 
 三种方式互斥。`dev:local` 只切换当前模块接口，登录、用户、菜单和其他公共接口仍访问目标环境；`dev:public` 只切换 public 的静态资源和 Federation 入口。
 

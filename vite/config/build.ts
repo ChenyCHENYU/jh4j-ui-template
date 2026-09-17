@@ -6,8 +6,9 @@ export function createBuildConfig(context: ViteContext): BuildOptions {
   const timestamp = context.buildTimestamp;
 
   return {
-    // Federation 历史发布流程依赖保留已有 chunk，清理策略后续单独治理。
-    emptyOutDir: false,
+    // 2026-09 放弃联邦增量打包后改为全量构建，dist 清空重建，
+    // 避免历史 chunk 无限堆积（生产项目曾膨胀到 18,259 文件/599MB）。
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
     minify: "esbuild",
     reportCompressedSize: false,

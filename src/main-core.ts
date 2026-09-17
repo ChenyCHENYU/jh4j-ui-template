@@ -22,9 +22,13 @@ import initPermission from "main/permission.ts";
 import store from "main/store/index.ts";
 import VueI18n from "main/language/index.ts";
 import { registerHiddenRoutes } from "@/util/navigate-hidden";
+import { installCommonPreset } from "@agile-team/wl-skills-ui/runtime/common-preset";
 
 export default async function () {
   const app: App = createApp(AppVue);
+
+  // wl-skills-ui 业务渲染预设（状态/分类/编号等字段自动渲染 Tag/徽标）
+  installCommonPreset();
 
   app.use(ElMessage);
   app.config.globalProperties.$message = ElMessage;
@@ -38,6 +42,12 @@ export default async function () {
   envConfig().getProcessEnv = function () {
     return JSON.parse(e);
   };
+
+  // 路由守卫首次导航时就会读取 token。必须在请求实例、远程模块和
+  // router 初始化之前确定存储介质，避免整页刷新时误按 Cookie 查找。
+  if (envConfig().getProcessEnv().VUE_APP_TOKEN_LOCALSTORAGE) {
+    envConfig().tokenStorage = "localStorage";
+  }
 
   const request = await import("@jhlc/common-core/src/util/real-request").then(
     (res) => res.default
@@ -78,15 +88,14 @@ export default async function () {
     const { default: AgGridPlugin } = await import("agGridApp/plugin");
     AgGridPlugin(app);
   } catch (e) {
-    console.warn("[main-core] agGridApp/plugin load failed, skip registration:", e);
+    console.warn(
+      "[main-core] agGridApp/plugin load failed, skip registration:",
+      e
+    );
   }
 
   app.mount("#app");
   WindowFlag.setStoreIsReady(true);
-
-  if (envConfig().getProcessEnv().VUE_APP_TOKEN_LOCALSTORAGE) {
-    envConfig().tokenStorage = "localStorage";
-  }
 
   fetchRemoteComponent("public", "./init-main/index.ts").then((init) => {
     if (typeof init === "function") {

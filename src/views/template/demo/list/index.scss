@@ -1,0 +1,11 @@
+// 列表页局部样式：list-page 骨架的间距补充。
+// 视觉基线（间距/圆角/配色）已由 wl-skills-ui styles 全局提供，
+// 这里只写页面特有的布局微调。
+
+.demo-list {
+  .list-page__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+}

@@ -1,4 +1,4 @@
-export const getEnv = function(): {
+export const getEnv = function (): {
   env: "dev" | "sit" | "uat" | "pre" | "prd" | "prod";
   isBuild: boolean;
   baseApi: string;

@@ -3,7 +3,16 @@
   "$id": "urn:jh4j:schema:template-manifest:1",
   "title": "JH4J Template Manifest",
   "type": "object",
-  "required": ["schemaVersion", "id", "name", "version", "category", "runtime", "defaults", "parameters"],
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "category",
+    "runtime",
+    "defaults",
+    "parameters"
+  ],
   "properties": {
     "schemaVersion": { "type": "integer", "minimum": 1 },
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9.-]+$" },

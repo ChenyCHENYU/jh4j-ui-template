@@ -10,7 +10,9 @@ const HIDDEN_ROUTE_MAP: Record<string, HiddenRouteLoader> = {
 };
 
 function hasRoute(router: any, path: string) {
-  return router.getRoutes?.().some((route: any) => route.path === path) ?? false;
+  return (
+    router.getRoutes?.().some((route: any) => route.path === path) ?? false
+  );
 }
 
 export function ensureHiddenRoute(router: any, path: string) {

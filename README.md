@@ -14,10 +14,13 @@
 - [技术栈](#技术栈)
 - [Module Federation 架构](#module-federation-架构)
 - [代码组织规范](#代码组织规范)
+- [UI 规范（wl-skills-ui）](#ui-规范wl-skills-ui)
+- [质量保障](#质量保障)
 - [常用开发模式](#常用开发模式)
 - [环境配置](#环境配置)
 - [版本对齐](#版本对齐)
 - [常见问题](#常见问题)
+- [更新记录](#更新记录)
 
 ---
 
@@ -55,7 +58,7 @@ pnpm setup -- --yes --no-standards
 pnpm install
 ```
 
-> 首次安装前请确认 `.npmrc` 中的内部 npm 源可访问。模板包含 `element-plus` 企业定制版本等非 scope 包，不能只把 `@jhlc` 指向内部源。
+> 首次安装前请确认 `.npmrc` 中的内部 npm 源可访问（默认 `npm.walsin.com.cn`，`@jhlc` / `@agile-team` scope 同源）。模板包含 `element-plus` 企业定制版本等非 scope 包，不能只把 scope 指向内部源。安装完成后 `postinstall` 会自动修补 `@jhlc/common-core` 的类型声明。
 
 ### 3. 启动开发服务器
 
@@ -99,14 +102,14 @@ jh4j create my-project --yes --no-standards
 
 项目级配置统一保存在 `project.config.json`：
 
-| 配置 | 用途 |
-| --- | --- |
-| `projectName` | npm 项目名称 |
-| `moduleName` | 平台模块标识、部署目录及 Federation 页面前缀 |
-| `title` | 浏览器标题和平台运行时标题 |
-| `devServerPort` | 本地开发端口 |
-| `environments` | DEV/SIT/UAT/PRE/PRD 地址与 API 前缀 |
-| `features` | 脚手架选中的标准化能力 ID |
+| 配置            | 用途                                         |
+| --------------- | -------------------------------------------- |
+| `projectName`   | npm 项目名称                                 |
+| `moduleName`    | 平台模块标识、部署目录及 Federation 页面前缀 |
+| `title`         | 浏览器标题和平台运行时标题                   |
+| `devServerPort` | 本地开发端口                                 |
+| `environments`  | DEV/SIT/UAT/PRE/PRD 地址与 API 前缀          |
+| `features`      | 脚手架选中的标准化能力 ID                    |
 
 生成来源和模板版本保存在 `.jhlc/project.json`，业务开发者不应手动修改模板来源字段。
 
@@ -224,16 +227,17 @@ jh4j-ui-template/
 │   │   ├── base.ts          # 通用 Vite 配置
 │   │   └── build.ts         # 构建配置
 │   ├── plugins/             # Vite 插件配置
-│   │   ├── index.ts         # 插件聚合（federation、SVG、WindiCSS 等）
+│   │   ├── index.ts         # 插件聚合（federation、SVG 等）
+│   │   ├── gen-env-json.ts  # 构建产物 env.json 身份卡生成
 │   │   ├── shared/          # Federation exposes 配置
 │   │   │   ├── components.ts # 暴露的公共组件
 │   │   │   └── pages.ts     # 暴露的业务页面
 │   │   └── type.ts          # PluginOption 类型定义
-│   └── util/                # 构建辅助工具
+│   └── build-environment-guard.ts # 发布环境防串线闸门（分支与 --mode 一致性）
 ├── vite.config.ts           # 精简 Vite 入口
-├── windi.config.ts          # WindiCSS 配置
 ├── tsconfig.json            # TypeScript 配置
 ├── .env                     # 各环境共用配置
+├── .env.local.example       # 本机覆盖配置样例（复制为 .env.local）
 └── package.json
 ```
 
@@ -249,7 +253,7 @@ jh4j-ui-template/
 | 状态管理 | Pinia                            | ~2.0.14       | 通过 federation 共享远程实例       |
 | 路由     | Vue Router                       | 4.4.3         | 通过 federation 共享远程实例       |
 | UI 组件  | Element Plus                     | 2.2.6-prod.3  | 企业级 UI                          |
-| CSS 工具 | WindiCSS                         | ^3.5.6        | 原子化 CSS                         |
+| UI 规范  | @agile-team/wl-skills-ui         | ^1.11.1       | 设计令牌/组件皮肤/列渲染运行时     |
 | 国际化   | Vue I18n                         | 9.13.1        | 通过 federation 共享远程实例       |
 | 公共包   | @jhlc/common-core                | 3.1.0-prod.14 | 平台共享 Store/API/类型            |
 | 语言     | TypeScript                       | ^5.4.0        | 类型安全                           |
@@ -366,10 +370,53 @@ export function createPage() {
 
 ### 样式规范
 
-- 优先使用 WindiCSS 原子类：`class="flex justify-between items-center p-4"`
-- 自定义样式使用 `<style scoped>`，避免全局污染
-- 引用平台 Design Token：`color: var(--ds-primary, #4368ff)`
-- 禁止硬编码历史遗留色值（`#4f46e5`、`#635BFF`、`#1482f0`）
+- 视觉基线（间距/圆角/配色/组件皮肤）由 `@agile-team/wl-skills-ui/styles` 全局提供，业务代码不重复实现
+- 颜色一律使用 Element Plus / wl-skills-ui 的 CSS 变量：`color: var(--el-color-primary)`，禁止硬编码历史色值
+- 自定义样式使用 `<style scoped>`，避免全局污染；全局覆盖优先沉淀到 `src/assets/style/`
+- 不使用原子化 CSS（WindiCSS 已于本版本移除，等效 preflight 见 `src/assets/style/main.scss` 顶部说明）
+
+---
+
+## UI 规范（wl-skills-ui）
+
+模板已默认接入团队 UI 统一规范体系，新项目无需手工集成：
+
+| 层                   | 接入点                                                                          | 作用                                                                       |
+| -------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| L0 设计令牌          | `index.html` 引入 `wl-skills-ui/design/tokens/base.css`                         | 品牌色/间距/圆角最先加载                                                   |
+| L1-L3 组件皮肤与骨架 | `src/assets/style/main.scss` 首行 `@use "@agile-team/wl-skills-ui/styles" as *` | Element Plus、封装组件、list-page/detail-page 等布局骨架                   |
+| 运行时渲染预设       | `src/main-core.ts` 调用 `installCommonPreset()`                                 | 状态/分类/编号字段经 `defineColumns()` 自动渲染 Tag/徽标                   |
+| 示例页               | `src/views/template/demo/`                                                      | 列表页 + 详情页的标准写法示范（defineColumns + renderOps + renderTagNode） |
+
+补充说明：
+
+- 列定义统一用 `defineColumns()` 包裹，操作列用 `renderOps()`，状态字段用 `renderTagNode()`（导入自 `@agile-team/wl-skills-ui/runtime`）
+- AI 编码规范文件（AGENTS.md 等）由 wl-skills-ui 自动生成与增量更新，安装命令参见《前端编码规范落地宣贯文档（多项目集群管控方案）》附录 A
+- 风格审计：`npx wl-ui all --project . --outFile report.md`（只读扫描，不修改文件）
+
+---
+
+## 质量保障
+
+| 命令                                | 时机                  | 说明                                               |
+| ----------------------------------- | --------------------- | -------------------------------------------------- |
+| `pnpm check`                        | 手动 / CI             | typecheck + lint + format:check 一键全检           |
+| `pnpm typecheck`                    | pre-push 钩子自动执行 | 见下方"类型检查口径"说明                           |
+| `pnpm lint` / `pnpm lint:fix`       | 随时                  | ESLint 检查 / 自动修复                             |
+| `pnpm format` / `pnpm format:check` | 随时                  | Prettier 格式化 / 校验                             |
+| `pnpm template:validate`            | 模板维护时            | 模板契约自检（版本一致性、环境配置、客户标识扫描） |
+
+### 类型检查口径
+
+平台依赖 `@jhlc/common-core` 以 TS 源码形式发包，业务侧深路径引用会把平台源码拉进编译图并产生平台侧类型错误（生产项目实测同此结论）。因此 `pnpm typecheck`（`scripts/typecheck.mjs`）只对本仓库 `src/`、`vite/` 内的错误失败退出；`node_modules` 内的平台错误计数汇总后豁免。平台包发布编译产物后可移除该包装恢复裸 `vue-tsc`。
+
+### 构建防串线
+
+`vite/build-environment-guard.ts` 在构建前校验：标准环境分支（dev/sit/uat/pre/prd）上，`--mode` 必须与分支一致，不一致直接终止构建；功能分支仅打印构建目标提示。防止"SIT 包打到 PRD"类事故。
+
+### 构建产物身份卡
+
+每次构建会在 `dist/env.json` 生成部署溯源信息（`vite/plugins/gen-env-json.ts`）：应用标识、构建环境、commit、分支、流水线号、构建时间、工作区是否干净。部署后访问 `/sub/{module}/env.json` 即可核对部署身份。该文件纯展示，运行时零读取。
 
 ---
 
@@ -420,6 +467,7 @@ console.log(user.name, user.roles);
 | `project.config.json`         | 项目标识、标题、端口、五套环境默认值 |
 | `.env`                        | 无敏感信息的跨环境运行时默认值       |
 | `.env.local`                  | 本机地址、报表密钥等临时覆盖，不提交 |
+| `.env.local.example`          | `.env.local` 的键位说明样例          |
 | `vite/config/environments.ts` | 只负责读取结构化环境配置             |
 | `vite/config/app.ts`          | 只负责读取项目和本地联调配置         |
 
@@ -479,3 +527,21 @@ console.log(user.name, user.roles);
 ### 新增页面后菜单看不到
 
 页面注册后需要后台配置菜单路由。联系管理员在系统管理中添加对应菜单项。
+
+### BaseQuery / BaseTable / jh-pagination 从哪里来
+
+这些平台组件由 public 工程的 `plugins/index.ts` 在运行时全局注册，业务页面直接在模板中使用，无需 import（示例页 `src/views/template/demo/list/index.vue` 即此写法）。
+
+### 构建被 [env-guard] 拦截
+
+当前分支是标准环境分支（dev/sit/uat/pre/prd）时，只能构建同环境的包。切换到对应环境执行 `pnpm build:{env}`，或在正确的分支上构建。
+
+### 为什么没有 WindiCSS / 原子化 CSS
+
+模板曾内置 WindiCSS，但经全量扫描确认业务页面无原子类消费方，safe-list 生成数千死类 CSS，已于 v1.2.0 移除。等效的 preflight 样式重置保留在 `src/assets/style/main.scss` 顶部，视觉零变化。
+
+---
+
+## 更新记录
+
+见 [docs/changelog.md](docs/changelog.md)：每个版本的特性回移说明、破坏性变更与后续升级路线（env.json 运行时接管、E2E 测试基建、wl-skills-kit 特性化接入等）。

@@ -14,12 +14,12 @@ export const CloudEnvOptions = [
 
 export const envIpMap: Record<string, string> = {};
 
-export const initEnvIp = function() {
+export const initEnvIp = function () {
   const env = getEnv();
   return env.webUrl?.replace(/_/g, ".");
 };
 
-export const getEnvIpMap = function() {
+export const getEnvIpMap = function () {
   return envIpMap || {};
 };
 
@@ -33,7 +33,10 @@ export const UrlPrefixEnum = {
   u_02_: "u_02_"
 };
 
-export const FetchUserInfoUrlPrefix = [UrlPrefixEnum.u_01_, UrlPrefixEnum.u_02_];
+export const FetchUserInfoUrlPrefix = [
+  UrlPrefixEnum.u_01_,
+  UrlPrefixEnum.u_02_
+];
 
 export const LocalStorageTokenUrlPrefix = [
   UrlPrefixEnum.c_01_,
@@ -48,7 +51,7 @@ export const SpecialUrlList = [
   UrlPrefixEnum.u_02_
 ];
 
-export const getUrlType = function() {
+export const getUrlType = function () {
   let path = window.location.pathname;
   const params = location.search ? parseParam("index" + location.search) : {};
   const sso = ["citicOaSso", "citicMarketSso", "citicMarketUserSso"];
