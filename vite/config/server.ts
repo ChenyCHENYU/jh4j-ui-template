@@ -1,54 +1,42 @@
 import type { ProxyOptions, ServerOptions } from "vite";
 import { APP_CONFIG } from "./app";
-import type { ViteContext } from "./context";
+import type { LocalApiTarget, ViteContext } from "./context";
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function createModuleProxy(context: ViteContext): ProxyOptions {
-  const moduleApiPattern = new RegExp(
-    `^${escapeRegExp(`${context.baseApi}/${APP_CONFIG.moduleName}`)}`
-  );
+function createLocalApiProxy(
+  context: ViteContext,
+  localApi: LocalApiTarget
+): ProxyOptions {
+  const requestPrefix = `${context.baseApi}/${localApi.prefix}`;
+  const requestPrefixPattern = new RegExp(`^${escapeRegExp(requestPrefix)}`);
 
   return {
-    target: context.useLocalBackend ? context.localBackendUrl : context.webUrl,
+    target: localApi.target,
     changeOrigin: true,
-    ...(context.useLocalBackend ? {} : { secure: false }),
-    rewrite: context.useLocalBackend
-      ? (path) => path.replace(moduleApiPattern, "")
-      : (path) => path,
+    rewrite: (path) => path.replace(requestPrefixPattern, ""),
     // 本地服务不经过平台 OAuth2，避免把远程 token 误传给本地后端。
-    ...(context.useLocalBackend
-      ? {
-          configure(proxy) {
-            proxy.on("proxyReq", (proxyRequest) => {
-              proxyRequest.removeHeader("Authorization");
-            });
-          }
-        }
-      : {})
+    configure(proxy) {
+      proxy.on("proxyReq", (proxyRequest) => {
+        proxyRequest.removeHeader("Authorization");
+      });
+    }
   };
 }
 
-function getModuleProxyPaths(context: ViteContext): string[] {
-  const routePrefixes: readonly string[] = APP_CONFIG.localBackendRoutes;
-  const modulePath = `${context.baseApi}/${APP_CONFIG.moduleName}`;
-
-  if (routePrefixes.length === 0) return [modulePath];
-
-  return routePrefixes.map(
-    (route) => `${modulePath}/${route.replace(/^\/+|\/+$/g, "")}`
-  );
-}
-
 function createProxyConfig(context: ViteContext) {
-  const moduleProxies = Object.fromEntries(
-    getModuleProxyPaths(context).map((path) => [
-      path,
-      createModuleProxy(context)
-    ])
-  );
+  // ENV_LOCAL_API 前缀路由：本地起多个微服务时按网关前缀分流，
+  // 键为正则形态且必须位于 baseApi 通配代理之前（前缀长者优先）。
+  const localApiProxies = context.useLocalBackend
+    ? Object.fromEntries(
+        context.localApiTargets.map((localApi) => [
+          `^${escapeRegExp(`${context.baseApi}/${localApi.prefix}`)}(?:/|$)`,
+          createLocalApiProxy(context, localApi)
+        ])
+      )
+    : {};
 
   const isSeparateApiServer =
     Boolean(context.apiServer) && context.apiServer !== context.webUrl;
@@ -59,7 +47,7 @@ function createProxyConfig(context: ViteContext) {
 
   return {
     // 具体业务路由必须位于 baseApi 通配代理之前。
-    ...moduleProxies,
+    ...localApiProxies,
     [context.baseApi]: {
       target: context.apiServer || context.webUrl,
       changeOrigin: true,

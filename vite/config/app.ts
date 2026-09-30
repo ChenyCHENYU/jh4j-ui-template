@@ -12,9 +12,7 @@ export const APP_CONFIG = {
   defaultTitle: projectConfig.title,
   defaultLocalBackendUrl: projectConfig.localBackendUrl,
   defaultLocalPublicUrl: projectConfig.localPublicUrl,
-  nodeServerUrl: projectConfig.nodeServerUrl,
-  // 空数组表示本地后端接管当前模块的全部接口。
-  localBackendRoutes: projectConfig.localBackendRoutes
+  nodeServerUrl: projectConfig.nodeServerUrl
 } as const;
 
 const FR_DIR_BY_ENV: Record<AppEnv, PluginOption["frDir"]> = {

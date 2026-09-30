@@ -169,7 +169,7 @@ pnpm dev
 | 联调本地后端    | `pnpm dev:local`  | `localhost:10010` | 远程             |
 | 联调本地 public | `pnpm dev:public` | 远程              | `localhost:8002` |
 
-五套环境地址统一维护在 `project.config.json`，本机临时覆盖使用不提交的 `.env.local`。完整命令和代理说明见 `docs/local-development.md`。
+本地后端支持按网关前缀路由多个服务（`.env.local` 中 `ENV_LOCAL_API=pl=http://localhost:10301;pb=http://localhost:10205`，裸 URL 等价单服务全接管）。五套环境地址统一维护在 `project.config.json`，本机临时覆盖使用不提交的 `.env.local`（键位见 `.env.local.example`）。完整命令和代理说明见 `docs/local-development.md`。
 
 #### 本地联调前置步骤
 
@@ -233,8 +233,6 @@ jh4j-ui-template/
 │   │   │   ├── components.ts # 暴露的公共组件
 │   │   │   └── pages.ts     # 暴露的业务页面
 │   │   └── type.ts          # PluginOption 类型定义
-│   └── build-environment-guard.ts # 发布环境防串线闸门（分支与 --mode 一致性）
-├── vite.config.ts           # 精简 Vite 入口
 ├── tsconfig.json            # TypeScript 配置
 ├── .env                     # 各环境共用配置
 ├── .env.local.example       # 本机覆盖配置样例（复制为 .env.local）
@@ -245,18 +243,18 @@ jh4j-ui-template/
 
 ## 技术栈
 
-| 分类     | 技术                             | 版本          | 说明                               |
-| -------- | -------------------------------- | ------------- | ---------------------------------- |
-| 框架     | Vue 3                            | ~3.2.25       | Composition API + `<script setup>` |
-| 构建     | Vite                             | 4.4.9         | 开发 HMR + 构建                    |
-| 微前端   | @originjs/vite-plugin-federation | 1.4.1-jh.3    | Module Federation                  |
-| 状态管理 | Pinia                            | ~2.0.14       | 通过 federation 共享远程实例       |
-| 路由     | Vue Router                       | 4.4.3         | 通过 federation 共享远程实例       |
-| UI 组件  | Element Plus                     | 2.2.6-prod.3  | 企业级 UI                          |
-| UI 规范  | @agile-team/wl-skills-ui         | ^1.11.1       | 设计令牌/组件皮肤/列渲染运行时     |
-| 国际化   | Vue I18n                         | 9.13.1        | 通过 federation 共享远程实例       |
-| 公共包   | @jhlc/common-core                | 3.1.0-prod.14 | 平台共享 Store/API/类型            |
-| 语言     | TypeScript                       | ^5.4.0        | 类型安全                           |
+| 分类     | 技术                             | 版本           | 说明                               |
+| -------- | -------------------------------- | -------------- | ---------------------------------- |
+| 框架     | Vue 3                            | ~3.2.25        | Composition API + `<script setup>` |
+| 构建     | Vite                             | 4.4.9          | 开发 HMR + 构建                    |
+| 微前端   | @originjs/vite-plugin-federation | 1.4.1-jh.3     | Module Federation                  |
+| 状态管理 | Pinia                            | ~2.0.14        | 通过 federation 共享远程实例       |
+| 路由     | Vue Router                       | 4.4.3          | 通过 federation 共享远程实例       |
+| UI 组件  | Element Plus                     | 2.2.6-prod.3   | 企业级 UI                          |
+| UI 规范  | @agile-team/wl-skills-ui         | 1.11.1（钉死） | 设计令牌/组件皮肤/列渲染运行时     |
+| 国际化   | Vue I18n                         | 9.13.1         | 通过 federation 共享远程实例       |
+| 公共包   | @jhlc/common-core                | 3.1.0-prod.14  | 平台共享 Store/API/类型            |
+| 语言     | TypeScript                       | ^5.4.0         | 类型安全                           |
 
 ---
 
@@ -391,28 +389,50 @@ export function createPage() {
 补充说明：
 
 - 列定义统一用 `defineColumns()` 包裹，操作列用 `renderOps()`，状态字段用 `renderTagNode()`（导入自 `@agile-team/wl-skills-ui/runtime`）
-- AI 编码规范文件（AGENTS.md 等）由 wl-skills-ui 自动生成与增量更新，安装命令参见《前端编码规范落地宣贯文档（多项目集群管控方案）》附录 A
+- AI 编码规范矩阵已由 `wl-ui init` 生成（`AGENTS.md` 路由 + 9 编辑器规则 + `.github/wl-skills-ui/` 触发提示 + `.mcp.json`），后续用 `npx wl-ui update` 增量更新，不要手改托管块
+- 版本钉死 1.11.1 与生产项目对齐；1.12 引入的 profile 体系尚无"native + jh 封装 + 联邦 AG Grid"混合形态，待上游补充后再升级
 - 风格审计：`npx wl-ui all --project . --outFile report.md`（只读扫描，不修改文件）
+
+### 内置组件样板
+
+| 组件              | 位置                     | 用途                                                                                                         |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `C_ParentView`    | `src/components/global/` | 路由父级占位（`<router-view />`）                                                                            |
+| `C_TagStatus`     | `src/components/global/` | 配置驱动状态标签；业务字典经 `registerStatusConfig("yourKey", [...])` 注册，内置 boolean/enable 两个通用字典 |
+| `C_Tree`          | `src/components/global/` | 通用树（Tab 切换 + 关键词过滤 + 节点插槽）                                                                   |
+| `C_ReportPreview` | `src/components/global/` | 打印报表平台远程预览（联邦加载 jh4j-cloud-report）                                                           |
+| `c_formModal`     | `src/components/local/`  | 三态表单弹窗（add/edit/view），基于 jh-dialog + BaseForm，支持列表选择器回填与测试数据填充                   |
+| `c_listModal`     | `src/components/local/`  | 单选列表选择弹窗（c_formModal 的选择器内核）                                                                 |
+| `c_formSections`  | `src/components/local/`  | 折叠区块表单（长表单分区）                                                                                   |
+| `c_spliterTitle`  | `src/components/local/`  | 分区标题条                                                                                                   |
+
+组件由 unplugin-vue-components 自动注册（`src/components` 深度扫描），直接在模板中使用，无需 import。
 
 ---
 
 ## 质量保障
 
-| 命令                                | 时机                  | 说明                                               |
-| ----------------------------------- | --------------------- | -------------------------------------------------- |
-| `pnpm check`                        | 手动 / CI             | typecheck + lint + format:check 一键全检           |
-| `pnpm typecheck`                    | pre-push 钩子自动执行 | 见下方"类型检查口径"说明                           |
-| `pnpm lint` / `pnpm lint:fix`       | 随时                  | ESLint 检查 / 自动修复                             |
-| `pnpm format` / `pnpm format:check` | 随时                  | Prettier 格式化 / 校验                             |
-| `pnpm template:validate`            | 模板维护时            | 模板契约自检（版本一致性、环境配置、客户标识扫描） |
+| 命令                                | 时机                  | 说明                                                                            |
+| ----------------------------------- | --------------------- | ------------------------------------------------------------------------------- |
+| `pnpm check`                        | 手动 / CI             | typecheck + lint + format:check 一键全检                                        |
+| `pnpm typecheck`                    | pre-push 钩子自动执行 | 安装 wl-skills-kit 后自动升级为 kit 的 validate（含规范检测），未安装时优雅降级 |
+| `pnpm lint` / `pnpm lint:fix`       | 随时                  | ESLint 检查 / 自动修复                                                          |
+| `pnpm format` / `pnpm format:check` | 随时                  | Prettier 格式化 / 校验                                                          |
+| `npx wl-ui check --project .`       | 接入完整性            | wl-skills-ui 五项接入检查（I001-I005）                                          |
+| `pnpm template:validate`            | 模板维护时            | 模板契约自检（版本一致性、环境配置、客户标识扫描）                              |
 
 ### 类型检查口径
 
 平台依赖 `@jhlc/common-core` 以 TS 源码形式发包，业务侧深路径引用会把平台源码拉进编译图并产生平台侧类型错误（生产项目实测同此结论）。因此 `pnpm typecheck`（`scripts/typecheck.mjs`）只对本仓库 `src/`、`vite/` 内的错误失败退出；`node_modules` 内的平台错误计数汇总后豁免。平台包发布编译产物后可移除该包装恢复裸 `vue-tsc`。
 
-### 构建防串线
+### 环境管控（env.json 运行时接管）
 
-`vite/build-environment-guard.ts` 在构建前校验：标准环境分支（dev/sit/uat/pre/prd）上，`--mode` 必须与分支一致，不一致直接终止构建；功能分支仅打印构建目标提示。防止"SIT 包打到 PRD"类事故。
+按《子应用环境管控规范（以 public 的 env.json 为准）》完成子应用集成，**门禁卡控由 wl-ui-public 中心化承担，子应用只做集成**：
+
+- `src/util/public-env.ts`：生产构建预载 `/sub/public/env.json`（5s 超时兜底），写入 `window.__WL_PUBLIC_ENV__`
+- `src/main.ts`：`await publicEnvReady` 后才动态加载 `main-core`，保证 axios 等模块顶层求值拿到的是 public 下发的环境
+- `vite/config/base.ts`：`process.env` define 运行时化——构建兜底值 + env.json 深合并（含 `OPTION` 嵌套），即使错误 mode 打包，运行时也会被 env.json 拉正
+- `/env-dev.json` 机制已退役：dev 直接使用 vite 上下文的 define 值
 
 ### 构建产物身份卡
 
@@ -498,6 +518,7 @@ console.log(user.name, user.roles);
 | element-plus                     | 2.2.6-prod.3  | UI 组件（federation shared）    |
 | @jhlc/common-core                | 3.1.0-prod.14 | 平台共享包（federation shared） |
 | @originjs/vite-plugin-federation | 1.4.1-jh.3    | 微前端插件                      |
+| @agile-team/wl-skills-ui         | 1.11.1        | UI 统一规范（与生产项目对齐）   |
 | vite                             | 4.4.9         | 构建工具                        |
 | typescript                       | ^5.4.0        | 类型检查                        |
 

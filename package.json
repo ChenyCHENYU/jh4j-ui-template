@@ -1,6 +1,6 @@
 {
   "name": "jh4j-ui-template",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm format:check"
   },
   "dependencies": {
-    "@agile-team/wl-skills-ui": "^1.11.1",
+    "@agile-team/wl-skills-ui": "1.11.1",
     "@jhlc/common-core": "3.1.0-prod.14",
     "@jhlc/types": "3.1.0",
     "@element-plus/icons-vue": "2.1.0",

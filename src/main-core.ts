@@ -38,14 +38,15 @@ export default async function () {
 
   app.use(store);
 
-  const e = await fetch("/env-dev.json").then((res) => res.text());
+  // 环境唯一事实源：生产为 wl-ui-public 的 env.json（经 define 运行时化
+  // 深合并进 process.env），dev 为本地 vite 上下文兜底值。已退役 /env-dev.json。
   envConfig().getProcessEnv = function () {
-    return JSON.parse(e);
+    return process.env;
   };
 
   // 路由守卫首次导航时就会读取 token。必须在请求实例、远程模块和
   // router 初始化之前确定存储介质，避免整页刷新时误按 Cookie 查找。
-  if (envConfig().getProcessEnv().VUE_APP_TOKEN_LOCALSTORAGE) {
+  if (process.env.VUE_APP_TOKEN_LOCALSTORAGE) {
     envConfig().tokenStorage = "localStorage";
   }
 

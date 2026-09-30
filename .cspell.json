@@ -1,0 +1,16 @@
+{
+  "version": "0.2",
+  "language": "en,zh-CN",
+  "ignorePaths": [
+    "src/auto-imports.d.ts",
+    "src/components.d.ts",
+    "pnpm-lock.yaml",
+    ".npmrc",
+    "template.manifest.json",
+    "node_modules/**",
+    "dist/**",
+    "**/*.log",
+    "**/*.min.js"
+  ],
+  "words": ["Pinia", "Nacos", "jhlc", "agileteam", "vitejs", "windicss"]
+}

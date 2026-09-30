@@ -1,7 +1,7 @@
 import path from "path";
 import type { UserConfig } from "vite";
 import { APP_CONFIG } from "./app";
-import type { ViteContext } from "./context";
+import type { RuntimeEnvironment, ViteContext } from "./context";
 
 const OPTIMIZED_DEPENDENCIES = [
   "@jhlc/common-core",
@@ -45,11 +45,27 @@ const OPTIMIZED_DEPENDENCIES = [
   "dayjs/plugin/isSameOrBefore.js"
 ];
 
+/**
+ * process.env 运行时化：构建值仅兜底，运行时以 wl-ui-public 部署的
+ * env.json 深合并覆盖（含 OPTION 嵌套合并）。错误 mode 打包的兜底值
+ * 也会被 env.json 拉正，串线防控由 public 中心化承担。
+ */
+function buildRuntimeProcessEnvDefine(runtimeEnv: RuntimeEnvironment): string {
+  return `(function () {
+  var baked = ${JSON.stringify(runtimeEnv)};
+  var runtime = (typeof window !== "undefined" && window.__WL_PUBLIC_ENV__) || null;
+  if (!runtime) return baked;
+  return Object.assign({}, baked, runtime, {
+    OPTION: Object.assign({}, baked.OPTION, runtime.OPTION || {})
+  });
+})()`;
+}
+
 export function createBaseConfig(context: ViteContext): UserConfig {
   return {
     appType: "spa",
     define: {
-      "process.env": context.runtimeEnv
+      "process.env": buildRuntimeProcessEnvDefine(context.runtimeEnv)
     },
     base: context.isBuild ? `/sub/${APP_CONFIG.moduleName}/` : "/",
     css: {

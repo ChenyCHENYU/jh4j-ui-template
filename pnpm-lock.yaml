@@ -8,8 +8,8 @@ importers:
   .:
     dependencies:
       "@agile-team/wl-skills-ui":
-        specifier: ^1.11.1
-        version: 1.12.0(@element-plus/icons-vue@2.1.0(vue@3.2.47))(element-plus@2.2.6-prod.3(vue@3.2.47))(vue@3.2.47)
+        specifier: 1.11.1
+        version: 1.11.1(@element-plus/icons-vue@2.1.0(vue@3.2.47))(element-plus@2.2.6-prod.3(vue@3.2.47))(vue@3.2.47)
       "@element-plus/icons-vue":
         specifier: 2.1.0
         version: 2.1.0(vue@3.2.47)
@@ -160,10 +160,10 @@ importers:
         version: 2.2.12(typescript@5.9.3)
 
 packages:
-  "@agile-team/wl-skills-ui@1.12.0":
+  "@agile-team/wl-skills-ui@1.11.1":
     resolution:
       {
-        integrity: sha512-d10bBbz7HvtgYHwpvSETuWIDhPGoZkIe6SVGw5hRq4rMM4VkH+cl4qSq/fuikNzZJA7CFYRUgNX+Gpi/0dn0LQ==
+        integrity: sha512-+b2Qp5syZ3XqL4NrZJGEtMyphJuUxg+XvjKIatLoOLqeOgOvvvnNVbom9hDgDVmzaK+1083DJJAU+opoUFviDQ==
       }
     engines: { node: ">=22" }
     hasBin: true
@@ -8061,7 +8061,7 @@ packages:
     engines: { node: ">=18" }
 
 snapshots:
-  "@agile-team/wl-skills-ui@1.12.0(@element-plus/icons-vue@2.1.0(vue@3.2.47))(element-plus@2.2.6-prod.3(vue@3.2.47))(vue@3.2.47)":
+  "@agile-team/wl-skills-ui@1.11.1(@element-plus/icons-vue@2.1.0(vue@3.2.47))(element-plus@2.2.6-prod.3(vue@3.2.47))(vue@3.2.47)":
     dependencies:
       element-plus: 2.2.6-prod.3(vue@3.2.47)
       vue: 3.2.47

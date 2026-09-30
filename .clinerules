@@ -1,0 +1,2270 @@
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: element/component-family
+
+## 定位
+
+用于治理 Element Plus 首批 B 端高频组件族的统一视觉，包括 card、tabs、descriptions、tree、drawer、upload、steps、overlay、navigation、feedback。
+
+核心原则：wl-skills-ui 优先保证样式绝对管控。无论项目使用纯 `el-*`、老旧封装、Base*/jh*/C_*，还是 wl-skills-kit 最佳写法，都先通过 L1/L2 样式层统一视觉，再按需引导规范化重构。
+
+## 覆盖组件
+
+| 组件族 | 标签 | 典型场景 |
+|---|---|---|
+| card | `el-card` | 列表容器、详情卡片、统计卡片 |
+| tabs | `el-tabs` `el-tab-pane` | 详情页 Tab、配置页 Tab、主从信息切换 |
+| descriptions | `el-descriptions` | 只读详情、字段展示 |
+| tree | `el-tree` | 左树右表、组织树、区域树 |
+| drawer | `el-drawer` | 抽屉详情、抽屉编辑 |
+| upload | `el-upload` | 附件上传、图片上传、文件列表 |
+| steps | `el-steps` `el-step` | 审批流、流程状态 |
+| overlay | `el-popover` `el-tooltip` `el-dropdown` | 辅助说明、溢出提示、更多操作 |
+| navigation | `el-menu` `el-breadcrumb` | 导航、面包屑 |
+| feedback | `el-empty` `el-result` `el-alert` `el-badge` `el-timeline` | 空状态、异常状态、提示反馈 |
+
+## 扫描规则
+
+| Rule | 含义 |
+|---|---|
+| R031 | `el-card` 建议标识 detail-card/stat-card/wk-card 等场景 class |
+| R032 | `el-tabs` 建议标识 detail-tabs/config-tabs/wk-tabs 等场景 class |
+| R033 | `el-descriptions` 建议使用 border 或统一详情容器 |
+| R034 | `el-drawer` 建议明确 size |
+| R035 | `el-upload` 建议配置 accept/limit/tip |
+| R036 | `el-steps` 建议明确 active/process-status/finish-status |
+| R037 | `el-empty` / `el-result` / `el-alert` 建议提供统一操作入口 |
+
+## B 端业务场景识别
+
+扫描报告的 `componentCoverage.businessScenarios` 会识别：
+
+- `query-table`：查询区 + 表格
+- `toolbar-actions`：工具栏 / 批量操作栏
+- `tree-table`：左树右表
+- `dialog-form`：弹窗表单
+- `drawer-detail`：抽屉详情 / 抽屉编辑
+- `detail-card`：详情卡片
+- `tab-workbench`：Tab 工作台 / Tab 详情
+- `attachment-upload`：附件上传
+- `process-flow`：流程 / 审批
+- `feedback-state`：空状态 / 异常状态
+
+## AI 使用流程
+
+1. 识别当前页面是否命中上述组件族。
+2. 优先确认项目是否加载 `@agile-team/wl-skills-ui/styles` 或 `styles/presets/skin`。
+3. 运行 `wl_ui_scan --output json` 获取 `componentCoverage`。
+4. 如果只是视觉不统一，优先使用 wl-skills-ui 样式层解决。
+5. 如果扫描结果提示页面结构、BaseTable、renderOps 等规范问题，再桥接 wl-skills-kit。
+
+## 推荐 MCP
+
+- `wl_ui_route_intent`：根据用户自然语言判断组件族和治理流程。
+- `wl_ui_scan`：只读扫描并输出组件覆盖。
+- `wl_ui_recommend_flow`：根据扫描 JSON 推荐下一步。
+- `wl_ui_fix_dry_run`：修复前预览，不直接写入。
+
+## 执行约束
+
+- 不为了样式统一强制改业务结构。
+- 不把老项目强制迁移到 wl-skills-kit。
+- 不直接删除项目已有封装。
+- 修复前必须先 dry-run 并给用户确认。
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  弹窗组件规范 Skill — el-dialog 内分页位置、嵌套表格操作列按钮风格标准。
+  覆盖规则：R011 R015。
+applyTo: "**/*.vue"
+---
+
+# 弹窗组件规范
+
+## R011 — 分页器必须放在 `<template #footer>` 中 【高危】
+
+弹窗内的 `el-pagination` 必须在 `#footer` slot 内，不得放在内容区（会导致布局溢出）。
+
+```diff
+<el-dialog v-model="visible" title="选择记录">
+  <el-table :data="list" empty-text="暂无数据">
+    <!-- 表格内容 -->
+  </el-table>
+- <el-pagination ... />
+
++ <template #footer>
++   <div class="dialog-footer-pagination">
++     <el-pagination
++       v-model:current-page="page.current"
++       v-model:page-size="page.size"
++       :total="page.total"
++       layout="total, sizes, prev, pager, next"
++     />
++   </div>
++ </template>
+</el-dialog>
+```
+
+---
+
+## R015 — 弹窗嵌套表格操作列必须用 `jh-op-btn` 图标按钮 【高危】
+
+弹窗内 `el-table` 的操作列**不得使用 `el-button link`**，必须与主列表操作列风格一致。
+
+```diff
+<!-- ❌ 旧写法 -->
+<el-table-column label="操作" width="120">
+  <template #default="{ row, $index }">
+    <el-button size="small" link type="danger"
+      @click="handleDeleteItem(row, $index)">删除</el-button>
+    <el-button size="small" link type="primary"
+      @click="handleViewItem(row)">查看</el-button>
+  </template>
+</el-table-column>
+
+<!-- ✅ 新写法 -->
+<el-table-column label="操作" width="100" align="center">
+  <template #default="{ row, $index }">
+    <button class="jh-op-btn jh-op-view" type="button" title="查看"
+      @click.stop="handleViewItem(row)">
+      <el-icon><View /></el-icon>
+    </button>
+    <button class="jh-op-btn jh-op-del" type="button" title="删除"
+      :disabled="optr === 'view'"
+      @click.stop="handleDeleteItem(row, $index)">
+      <el-icon><Delete /></el-icon>
+    </button>
+  </template>
+</el-table-column>
+```
+
+或使用 `renderOps` 更简洁：
+
+```typescript
+{ label: '操作', width: 100, align: 'center',
+  defaultSlot: ({ row, $index }) => renderOps([
+    { type: 'view', onClick: () => handleViewItem(row) },
+    { type: 'del',  show: optr.value !== 'view', onClick: () => handleDeleteItem(row, $index) },
+  ])
+}
+```
+
+---
+
+## 支持的图标类型
+
+| CSS 类       | 图标   | 适用场景  |
+| ------------ | ------ | --------- |
+| `jh-op-del`  | Delete | 删除/移除 |
+| `jh-op-view` | View   | 查看/详情 |
+| `jh-op-edit` | Edit   | 编辑/修改 |
+
+---
+
+## 弹窗标准结构
+
+```html
+<el-dialog
+  v-model="visible"
+  title="选择记录"
+  width="900px"
+  :close-on-click-modal="false"
+>
+  <!-- 搜索区（可选） -->
+  <div class="search-bar">...</div>
+
+  <!-- 表格 -->
+  <el-table :data="list" empty-text="暂无数据" height="400">
+    <el-table-column
+      type="selection"
+      width="55"
+      align="center"
+      header-align="center"
+    />
+    ...列定义...
+  </el-table>
+
+  <!-- Footer：分页 + 操作按钮 -->
+  <template #footer>
+    <div class="dialog-footer">
+      <el-pagination ... />
+      <div class="footer-btns">
+        <el-button size="small" icon="Close" @click="visible = false">取消</el-button>
+        <el-button type="primary" size="small" icon="Check" @click="handleConfirm">确定</el-button>
+      </div>
+    </div>
+  </template>
+</el-dialog>
+```
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# 表单控件规范
+
+## R006 — el-input / el-select 必须 `size="small"` 【中危】
+
+全局统一 `size="small"`，确保 32px 高度的密度体验。
+
+```diff
+- <el-input v-model="form.name" placeholder="请输入">
++ <el-input size="small" v-model="form.name" placeholder="请输入">
+
+- <el-select v-model="form.type">
++ <el-select size="small" v-model="form.type">
+```
+
+> 可以通过全局配置 `ElConfigProvider` 统一设置，但建议显式声明，避免嵌套组件污染。
+
+---
+
+## R007 — el-date-picker 必须 `style="width:100%"` 【中危】
+
+el-date-picker 默认宽度不会自动撑满 el-form-item，必须显式设置。
+
+```diff
+- <el-date-picker v-model="form.date" type="date" placeholder="请选择">
++ <el-date-picker style="width:100%" v-model="form.date" type="date" placeholder="请选择">
+```
+
+---
+
+## R008 — el-form `labelWidth` 建议 ≥ 150px 【低危】
+
+```diff
+- <el-form :model="form" labelWidth="100px">
++ <el-form :model="form" labelWidth="150px">
+```
+
+> 本系统内最长标签"隐患排查内容及标准"9字 ≈ 126px + padding ≈ 142px，`150px` 为安全兜底值。
+> 此规则**需人工确认**，不自动修改（部分特殊布局可能需要不同值）。
+
+---
+
+## 表单控件圆角一致性 【中危】
+
+表单里的输入类控件必须按控件家族统一判断，不要只修 `el-input`：
+
+- 输入：`el-input` / `el-textarea` / `el-input-number`
+- 选择：`el-select` / `el-cascader` / `el-autocomplete`
+- 日期：`el-date-picker` / `el-time-picker` / range editor
+- 上传：`el-upload-dragger` / upload list item
+
+修复时优先使用全局样式 token `--wk-form-control-radius`，不要在业务页面对某几个控件单独写 `border-radius: 0`、`4px`、`10px` 等局部值。若页面需要特殊圆角，应在页面容器上覆盖 token，而不是逐个控件硬编码。
+
+---
+
+## 表单字号与状态边框一致性 【中危】
+
+- 紧凑业务表单的 label、输入值、选择值、picker、textarea、数字值和 placeholder
+  统一使用 `--wk-form-font-size: 12px`；不要在某一种组件上单独保留 13px/14px。
+- textarea focus 必须是清晰的品牌色实线与轻外环，不能只改 `border-color` 或依赖
+  平台默认阴影。
+- 数字输入框必须同时检查社区版“wrapper 子节点”和 jh-ui“wrapper 与
+  input-number 同节点”两种 DOM，并确保只存在一层可见边框。
+- 带 prepend/append 的 input-group 必须由组合根绘制唯一外轮廓；输入主体、附加段
+  统一 26px，左右图标统一 14px。纯图标附加段使用 32px，文字/单位/按钮保持内容宽度。
+  不允许业务页分别给 `.el-input__inner` 与 `.el-input-group__append` 写不同高度。
+- 登录页和显式定制页继续使用自身样式，不套用上述高权重规则。
+
+---
+
+## 表单列数与输入宽度 【中危】
+
+- 全宽业务表单默认 4 列，严禁使用 5～8 列把输入框压缩到无法阅读或填写。
+- 单个控件可输入区不足 160px 时降为 3 列；长标签、带单位字段按同样标准判断。
+- 字段较多时使用分区、Tab 或展开/收起，首屏建议展示 4～6 行。
+- 不依赖步进操作的数字输入传入 `controls=false`，不得用 CSS 强行覆盖出第二层焦点边框。
+
+---
+
+## 完整标准表单示例
+
+```html
+<el-form :model="form" label-width="150px" label-position="right">
+  <el-row :gutter="20">
+    <el-col :span="12">
+      <el-form-item label="姓名" prop="name">
+        <el-input size="small" v-model="form.name" placeholder="请输入姓名" />
+      </el-form-item>
+    </el-col>
+    <el-col :span="12">
+      <el-form-item label="所属部门" prop="dept">
+        <el-select size="small" v-model="form.dept" placeholder="请选择">
+          <el-option
+            v-for="o in deptOptions"
+            :key="o.value"
+            :label="o.label"
+            :value="o.value"
+          />
+        </el-select>
+      </el-form-item>
+    </el-col>
+    <el-col :span="12">
+      <el-form-item label="开始日期" prop="startDate">
+        <el-date-picker
+          style="width:100%"
+          size="small"
+          v-model="form.startDate"
+          type="date"
+          placeholder="请选择日期"
+        />
+      </el-form-item>
+    </el-col>
+  </el-row>
+</el-form>
+```
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# 表格组件规范
+
+## R001 — el-table-column 必须 `align="center"` 【高危】
+
+**所有列**（含 selection / index）均必须居中对齐。
+
+```diff
+- <el-table-column label="名称" prop="name">
++ <el-table-column align="center" label="名称" prop="name">
+
+- <el-table-column type="selection" width="70" align="left">
++ <el-table-column type="selection" width="55" align="center" header-align="center" fixed="left">
+
+- <el-table-column type="index" width="80">
++ <el-table-column type="index" align="center" width="60">
+```
+
+> ⚠️ selection 列：`width=55`，`align="center"` **且** `header-align="center"` 两者必须同时设置，缺一会导致复选框垂直错位。
+
+---
+
+## R002 — el-table 必须 `empty-text="暂无数据"` 【中危】
+
+```diff
+- <el-table :data="list">
++ <el-table :data="list" empty-text="暂无数据">
+```
+
+修复空状态时不要猜测固定高度；应先识别当前表格的真实内容区域（含主表、子表、弹窗表格、展开行内嵌套表格），保证空态在对应表格自身区域内水平/垂直居中，空态图标、文字比例保持同一套视觉规范。若业务页面存在树筛选、组织机构、标签页等上下文，仅在能从 DOM/文案/变量中确认存在时才补充对应提示，不要硬写“左侧选择组织机构”等不一定存在的描述。
+
+---
+
+## R003 — BaseTable 必须 `empty-text="暂无数据"` 【中危】
+
+```diff
+- <BaseTable :hook="page">
++ <BaseTable :hook="page" empty-text="暂无数据">
+```
+
+---
+
+## R014 — selection 列必须 `header-align="center"` 【中危】
+
+```diff
+- <el-table-column type="selection" width="55" fixed="left" align="center">
++ <el-table-column type="selection" width="55" fixed="left" align="center" header-align="center">
+```
+
+---
+
+## R039 — 普通数据列必须超长省略并悬停显示完整内容 【中危】
+
+```diff
+- <el-table-column prop="customerName" label="客户名称" align="center" />
++ <el-table-column prop="customerName" label="客户名称" align="center" show-overflow-tooltip />
+```
+
+BaseTable / AG Grid 使用 `defineColumns()` 后由 runtime 自动为普通文本列补齐
+`showOverflowTooltip: true`。自定义渲染、结构列、换行列不强制；需要主动关闭时
+显式声明 `showOverflowTooltip: false`。
+
+Skin/历史项目还必须在启动入口引入一次
+`@agile-team/wl-skills-ui/runtime/auto`。它为未经过 `defineColumns()` 的动态
+Picker/BaseTable/AG Grid 普通文本提供真实溢出兜底；未溢出、已有 Tooltip、Tag、
+操作列、编辑列、自定义 renderer 与皮肤豁免区域均不接管。局部可使用
+`data-wl-ui-overflow="off"` 退出。
+
+行 hover/selected 色由包内表格 token 统一管理，业务页面不要重写
+`hover-row`、`current-row` 或直接覆盖 `td.el-table__cell` 背景，以免编辑控件、
+校验态和语义单元格底色发生冲突。
+
+---
+
+## 完整标准写法示例
+
+```html
+<el-table :data="list" empty-text="暂无数据">
+  <el-table-column
+    type="selection"
+    width="55"
+    fixed="left"
+    align="center"
+    header-align="center"
+  />
+  <el-table-column type="index" align="center" width="60" label="序号" />
+  <el-table-column
+    align="center"
+    prop="name"
+    label="名称"
+    min-width="120"
+    show-overflow-tooltip
+  />
+  <el-table-column align="center" prop="status" label="状态" width="90">
+    <template #default="{ row }">
+      <!-- 使用 renderTagSlot 渲染彩色 Tag，见 tag-status/SKILL.md -->
+    </template>
+  </el-table-column>
+</el-table>
+```
+
+---
+
+## labelWidth 选取建议
+
+| 最长标签字数 | 建议 labelWidth             |
+| ------------ | --------------------------- |
+| ≤ 5 字       | `100px`                     |
+| 6~7 字       | `120px`                     |
+| 8~9 字       | `150px`（**推荐统一值**）   |
+| ≥ 10 字      | `180px`（特殊表单单独处理） |
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# 枚举/状态/分类展示规范
+
+> 凡是表格列，遇到**枚举值**，必须按下表分类选择渲染函数，禁止纯文本展示。
+
+---
+
+## 五类字段 → 五种渲染方式
+
+| 字段类别                    | 典型字段                               | 视觉效果         | 渲染函数                    |
+| --------------------------- | -------------------------------------- | ---------------- | --------------------------- |
+| **状态类**（二元/流转）     | enableStatus、permitStatus、riskStatus | 实心彩色 Tag     | `renderTagNode(v, MAP)`     |
+| **分类/级别类**（归档属性） | coursewareType、trainLevel、planType   | 镂空 outline Tag | `renderClassifyTag(v, MAP)` |
+| **编号/代码类**             | riskNo、planNo、fileNo                 | 蓝色圆角徽标     | `renderBadge(v)`            |
+| **数值型**                  | baseCount、score                       | 绿色圆角徽标     | `renderCountBadge(v)`       |
+| **警示文本型**              | evaluateStandard                       | 红色字体         | `renderDangerText(v)`       |
+
+---
+
+## 状态类颜色语义（强制规范）
+
+| 状态含义                        | ElTag type         | 例子                       |
+| ------------------------------- | ------------------ | -------------------------- |
+| 正常 / 有效 / 已完成 / 启用     | `success`（绿）    | 已启用、证书有效、已完工   |
+| 警告 / 临时 / 待处理 / 即将过期 | `warning`（橙）    | 即将过期、待审批           |
+| 停用 / 驳回 / 已过期 / 危险     | `danger`（红）     | 已停用、审批驳回、证书过期 |
+| 草稿 / 未开始 / 中性            | `info`（灰）       | 草稿、未处理               |
+| 主流程默认状态                  | `"primary"` / `""` | 作业中、处理中             |
+
+---
+
+## 判断原则
+
+```
+字段名含 Status / State / Flag   → 状态类 → renderTagNode
+字段名含 Type / Level / Kind / Category → 分类类 → renderClassifyTag
+字段名含 No / Code / Id（非主键） → 编号类 → renderBadge
+字段名含 Count / Score / Weight   → 数值类 → renderCountBadge
+字段名含 Reason / Standard / 文本  → 警示文本 → renderDangerText
+```
+
+---
+
+## 静态 Map（字典固定时）
+
+```typescript
+import { renderTagNode, renderClassifyTag } from '@agile-team/wl-skills-ui/runtime';
+
+export const MY_STATUS_MAP = {
+  "0": { label: "待处理", type: "info" },
+  "1": { label: "处理中", type: "primary" },
+  "2": { label: "已完成", type: "success" },
+  "3": { label: "已驳回", type: "danger" },
+} as const;
+
+// 在 columnsDef 中：
+{ name: 'myStatus', label: '状态', width: 90,
+  defaultNode: ({ row }) => renderTagNode(row.myStatus, MY_STATUS_MAP) }
+```
+
+---
+
+## 动态字典（后端配置时）
+
+```typescript
+import { renderDictClassifyTag } from '@agile-team/wl-skills-ui/runtime/common-preset';
+
+// 只需定义颜色映射，label 由字典动态获取
+export const TRAIN_LEVEL_COLOR_MAP: Record<string, string> = {
+  "1": "",         // 公司级（蓝）
+  "2": "warning",  // 部门级（橙）
+  "3": "info",     // 班组级（灰）
+};
+
+// 在 columnsDef 中：
+{ name: 'trainLevel', label: '培训级别', width: 100,
+  defaultSlot: ({ row }) => renderDictClassifyTag(row.trainLevel, 'trainLevel', TRAIN_LEVEL_COLOR_MAP) }
+```
+
+> 注意：使用 `renderDictClassifyTag` 前需调用 `setDictResolver(fn)` 注入字典查询函数。
+
+---
+
+## 通用业务预设（已内置，无需重新定义）
+
+`installCommonPreset()` 后通过 `defineColumns()` 自动生效：
+
+| 字段名             | 渲染         | 常量                    |
+| ------------------ | ------------ | ----------------------- |
+| `riskLevel`        | 风险分级 Tag | `RISK_LEVEL_MAP`        |
+| `taskStatus`       | 排查任务状态 | `TASK_STATUS_MAP`       |
+| `riskStatus`       | 隐患状态     | `RISK_STATUS_MAP`       |
+| `permitStatus`     | 作业票状态   | `PERMIT_STATUS_MAP`     |
+| `trainStatus`      | 培训状态     | `TRAIN_STATUS_MAP`      |
+| `credentialStatus` | 证书状态     | `CREDENTIAL_STATUS_MAP` |
+| `coursewareType`   | 课件类型     | `COURSEWARE_TYPE_MAP`   |
+
+---
+
+## R009 — 状态字段禁止纯文本渲染 【高危，需人工确认】
+
+```diff
+// ❌ 纯文本
+{ name: 'status', label: '状态' }
+
+// ✅ 使用 defineColumns 自动映射（enableStatus / riskLevel 等已注册字段）
+// 或显式指定渲染器：
+{ name: 'status', label: '状态', width: 90,
+  defaultNode: ({ row }) => renderTagNode(row.status, MY_STATUS_MAP) }
+```
+
+## R010 — 分类字段必须 `effect="plain"` 【中危，需人工确认】
+
+```diff
+// ❌ 分类字段用实心 Tag
+h(ElTag, { type: 'warning' }, () => label)
+
+// ✅ 分类字段用镂空 Tag
+h(ElTag, { type: 'warning', effect: 'plain', size: 'small' }, () => label)
+// 或直接用 renderClassifyTag(value, MAP)
+```
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# layouts/detail-page SKILL
+
+## 适用场景
+
+**只读展示页**：以 `el-descriptions` 或自定义 label-value 卡片为主，可附带子表格（只读）。
+
+---
+
+## Detect — 识别详情页
+
+```
+检测条件（满足任意 2 项即判定）：
+✓ 文件名含 Detail / Info / Profile / View（如 DetailPage.vue / InfoView.vue）
+✓ 页面以 el-descriptions 为主体
+✓ 路由 path 含 /detail/:id 或 /view/:id
+✓ 页面顶部有面包屑 + 返回按钮
+✓ 无 el-form 表单提交逻辑
+```
+
+---
+
+## Diagnose — 诊断问题
+
+| 问题 | 规则 | 说明 |
+|---|---|---|
+| 根节点缺少 `.detail-page` | L-301 | 应为 `<div class="detail-page">` |
+| 子表格有操作列文字按钮 | R015 | 详情页内嵌 el-table 也须用 jh-op-btn（仅下载/查看类图标）|
+| 状态字段纯文本展示 | R009 | 详情页状态字段也应用 renderTagNode |
+| label-value 未用统一 class | L-302 | 自定义 label-value 应用 `.detail-item` 统一间距 |
+| 硬编码颜色 | R016-R018 | 详情页强调色应用 CSS Token |
+
+---
+
+## Repair — 修复指引
+
+### 标准结构（el-descriptions 版）
+
+```vue
+<template>
+  <div class="detail-page">
+    <!-- 顶部操作栏 -->
+    <div class="detail-page__header">
+      <el-page-header @back="$router.back()" :content="pageTitle" />
+      <div class="detail-page__actions">
+        <el-button size="small" icon="Edit" @click="handleEdit">编辑</el-button>
+      </div>
+    </div>
+
+    <!-- 基本信息卡片 -->
+    <el-card class="detail-page__card" header="基本信息">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="名称">{{ info.name }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <component :is="renderTagNode(info.enableStatus, ENABLE_STATUS_MAP)" />
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ info.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">{{ info.remark }}</el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+
+    <!-- 子表格（只读，可选） -->
+    <el-card class="detail-page__card" header="关联记录">
+      <el-table :data="subList" empty-text="暂无数据">
+        <el-table-column type="index" label="序号" width="60" align="center" />
+        <el-table-column prop="name" label="名称" align="center" />
+        <el-table-column label="操作" width="80" align="center">
+          <template #default="{ row }">
+            <button class="jh-op-btn jh-op-view" title="查看" @click="viewAttach(row)">
+              <el-icon><View /></el-icon>
+            </button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </div>
+</template>
+```
+
+### SCSS 对应
+
+```scss
+// styles/layouts/_detail-page.scss 已提供基础骨架
+// .detail-page__card 提供卡片间距
+// .detail-page__header 提供顶部操作栏布局
+```
+
+---
+
+## 关联资源
+
+- 样式实现：[styles/layouts/_detail-page.scss](../../../styles/layouts/_detail-page.scss)
+- 相关 skills：[element/el-table](../../element/el-table/SKILL.md) | [layouts/form-dialog](../form-dialog/SKILL.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  表单弹窗骨架 Skill — 检测/对齐 .form-dialog 标准结构（el-dialog + el-form + footer 操作按钮），
+  适用于新增/编辑/详情三合一弹窗模式。
+applyTo: "**/*.vue"
+---
+
+# layouts/form-dialog SKILL
+
+## 适用场景
+
+以 `el-dialog` 承载 `el-form` 的新增/编辑/详情弹窗，支持 `optr: 'add' | 'edit' | 'view'` 三态切换。
+
+---
+
+## Detect — 识别表单弹窗
+
+```
+检测条件（满足任意 2 项即判定）：
+✓ 文件名含 Modal / Dialog / Form（如 AddModal.vue / EditDialog.vue）
+✓ 存在 el-dialog 包裹 el-form
+✓ defineExpose 中有 add / edit / view 方法
+✓ 存在 optr ref 用于控制表单只读/可写状态
+✓ el-dialog footer 中有"确定"/"取消"按钮
+```
+
+---
+
+## Diagnose — 诊断问题
+
+| 问题 | 规则 | 说明 |
+|---|---|---|
+| el-dialog 缺 `.form-dialog` class | L-201 | 应加 `class="form-dialog"` 便于全局覆盖 |
+| el-form 缺 `labelWidth="150px"` | R008 | 统一 label 宽度 |
+| el-input/el-select 缺 `size="small"` | R006 | 表单控件统一 small |
+| el-date-picker 缺 `style="width:100%"` | R007 | 日期控件需撑满容器 |
+| footer 中含分页组件 | R011 | 分页不应在 footer 内 |
+| 弹窗内嵌套 el-table 操作列用文字按钮 | R015 | 应用 jh-op-btn 图标 |
+| 详情态（optr=view）没有禁用所有输入 | L-202 | 应统一用 `:disabled="optr==='view'"` |
+
+---
+
+## Repair — 修复指引
+
+### 标准结构
+
+```vue
+<template>
+  <el-dialog
+    v-model="visible"
+    class="form-dialog"
+    :title="title"
+    width="700px"
+    :close-on-click-modal="false"
+    @closed="reset"
+  >
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="optr !== 'view' ? rules : {}"
+      label-width="150px"
+      label-position="right"
+    >
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="名称" prop="name">
+            <el-input
+              v-model="form.name"
+              size="small"
+              placeholder="请输入"
+              :disabled="optr === 'view'"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="日期" prop="date">
+            <el-date-picker
+              v-model="form.date"
+              type="date"
+              size="small"
+              style="width:100%"
+              :disabled="optr === 'view'"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+
+    <template #footer>
+      <el-button size="small" icon="Close" @click="visible = false">取消</el-button>
+      <el-button
+        v-if="optr !== 'view'"
+        type="primary"
+        size="small"
+        icon="Check"
+        :loading="saving"
+        @click="handleSubmit"
+      >确定</el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup>
+const visible = ref(false);
+const optr = ref('add'); // 'add' | 'edit' | 'view'
+const title = computed(() => ({ add: '新增', edit: '编辑', view: '详情' }[optr.value]);
+
+function add() { optr.value = 'add'; reset(); visible.value = true; }
+function edit(id) { optr.value = 'edit'; load(id); visible.value = true; }
+function view(id) { optr.value = 'view'; load(id); visible.value = true; }
+
+defineExpose({ add, edit, view });
+</script>
+```
+
+### 三态最佳实践
+
+| 态 | optr | 输入控件 | footer 按钮 |
+|---|---|---|---|
+| 新增 | `'add'` | 可编辑 | 取消 + 确定 |
+| 编辑 | `'edit'` | 可编辑 | 取消 + 确定 |
+| 详情 | `'view'` | `disabled` | 仅取消/关闭 |
+
+---
+
+## 关联资源
+
+- 样式实现：[styles/layouts/_form-dialog.scss](../../../styles/layouts/_form-dialog.scss)
+- 代码模板：[templates/form-dialog/TPL-FORM-DIALOG.md](../../../templates/form-dialog/TPL-FORM-DIALOG.md)
+- 相关 skills：[layouts/list-page](../list-page/SKILL.md) | [element/el-form](../../element/el-form/SKILL.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  列表页骨架 Skill — 检测/对齐 .list-page 标准布局（搜索区 + 工具栏 + 表格 + 分页），
+  适用于 Native 模式新项目；同时提供 AI 修复指引。
+applyTo: "**/*.vue"
+---
+
+# layouts/list-page SKILL
+
+## 适用场景
+
+页面结构为：**搜索栏 → 工具栏（增删按钮） → 列表标题 → 数据表格 → 分页器** 的经典 CRUD 列表页。
+
+---
+
+## Detect — 识别列表页
+
+### 方式一：结构特征识别
+
+```
+检测条件（满足任意 2 项即判定为列表页）：
+✓ 根节点或第一子节点含 class="list-page" / "page-wrapper" / "table-page"
+✓ 存在 <BaseTable> 或 <el-table>
+✓ 存在 <BaseQuery> 或包含搜索条件的 el-form
+✓ 存在 <jh-pagination> 或 <el-pagination>
+✓ 存在工具栏区域（包含"新增"按钮的 el-row / div.toolbar）
+```
+
+### 方式二：命令触发
+
+```
+用 wl-ui 的 layouts/list-page skill 检查这个文件
+→ AI 加载本 SKILL.md，对当前文件做 Detect → Diagnose → Repair
+```
+
+---
+
+## Diagnose — 诊断问题
+
+### 结构层问题
+
+| 问题                                | 规则  | 说明                                             |
+| ----------------------------------- | ----- | ------------------------------------------------ |
+| 根节点缺少 `.list-page`             | L-001 | 应为 `<div class="list-page">`                   |
+| 搜索区未用 `.list-page__query`      | L-002 | 内部结构应遵循 BEM                               |
+| 工具栏未用 `.list-page__toolbar`    | L-003 | 按钮组应在 `.list-page__toolbar` 内              |
+| 工具栏与标题同排或位于标题下方      | L-006 | 工具栏应在标题上、表格上独占一行并左对齐         |
+| 分页列表标题重复显示“共 N 条”       | L-007 | 分页器已有总数，仅非分页短列表可在标题旁显示条数 |
+| 表格区未用 `.list-page__table`      | L-004 | 表格容器应有独立 class                           |
+| 分页区未用 `.list-page__pagination` | L-005 | 分页器位置需在 **内容区**，不得在 dialog footer  |
+
+### 内容层问题（复用 scanner 规则）
+
+- R001 ~ R003：表格列对齐 + empty-text
+- R005：普通动作按钮缺语义 icon；静态常见文案可确定性修复，动态/未知文案人工确认
+- R038：新增/新建/添加/创建类主按钮缺 primary 填充主题色
+- R041：按钮/BaseToolbar 未显式 `size`；fixer 默认补 `small`，显式其他尺寸不覆盖
+- R039：普通数据列缺少省略号与悬停完整内容提示
+- R006：搜索区输入框缺 `size="small"`
+- R011：分页在 footer 内（严重）
+
+---
+
+## Repair — 修复指引
+
+### 标准结构
+
+```vue
+<template>
+  <div class="list-page">
+    <!-- 搜索区 -->
+    <div class="list-page__query">
+      <BaseQuery :params="searchParams" @search="reload" @reset="reset" />
+    </div>
+
+    <!-- 工具栏：标题上方、表格上方、左对齐，独占一行 -->
+    <div class="list-page__toolbar">
+      <el-button type="primary" size="small" icon="Plus" @click="modal.add()"
+        >新增</el-button
+      >
+      <el-button type="warning" size="small" plain icon="Edit" @click="modal.edit()"
+        >修改</el-button
+      >
+      <el-button size="small" icon="Download" @click="handleExport">导出</el-button>
+    </div>
+
+    <!-- 列表标题：位于按钮组下方，不与按钮同排 -->
+    <div class="list-page__title">[列表标题]</div>
+
+    <!-- 表格 -->
+    <div class="list-page__table">
+      <BaseTable :hook="page" empty-text="暂无数据" :columns="columns" />
+    </div>
+
+    <!-- 分页 -->
+    <div class="list-page__pagination">
+      <jh-pagination :hook="page" />
+    </div>
+  </div>
+</template>
+```
+
+“新增”类按钮必须保持 `type="primary"` 且不得带 `plain`；生成完成后运行
+`wl-ui scan` / `wl-ui fix` 复核 R005/R038/R041，确定性补齐常见动作图标和缺失的 `small`。表格列统一由 `defineColumns()` 包裹，
+普通文本列的 R039 行为由 runtime 自动补齐。
+
+### SCSS 对应（由 styles/layouts/\_list-page.scss 提供）
+
+```scss
+// 业务侧无需手写，全局 @use 后自动生效
+// 如需定制，在组件 <style scoped> 内覆盖：
+.list-page {
+  // 自定义
+}
+```
+
+### 使用脚手架
+
+```bash
+# 直接在编辑器让 AI：
+# 按 wl-ui 的 templates/list-page/TPL-LIST.md 创建该页面
+```
+
+---
+
+## 关联资源
+
+- 样式实现：[styles/layouts/\_list-page.scss](../../../styles/layouts/_list-page.scss)
+- 代码模板：[templates/list-page/TPL-LIST.md](../../../templates/list-page/TPL-LIST.md)
+- 相关 skills：[vendors/base-table](../../vendors/base-table/SKILL.md) | [vendors/jh-components](../../vendors/jh-components/SKILL.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# layouts/tree-list SKILL
+
+## 适用场景
+
+页面结构为：**左侧分类/组织树 + 右侧数据列表（含搜索 + 表格 + 分页）** 的双栏页面。
+
+---
+
+## Detect — 识别左树右表页
+
+```
+检测条件（满足任意 2 项即判定）：
+✓ 页面存在并排的 el-tree 或 jh-tree
+✓ 存在 jh-drag-col（拖拽分割条）
+✓ 根节点含 class="tree-list" / "tree-page" / "left-tree-right-table"
+✓ 布局中有宽度约 240px 的左侧容器 + 弹性宽度的右侧容器
+✓ 存在 @node-click / @current-change 事件绑定
+```
+
+---
+
+## Diagnose — 诊断问题
+
+| 问题 | 规则 | 说明 |
+|---|---|---|
+| 根节点缺少 `.tree-list` | L-101 | 应为 `<div class="tree-list">` |
+| 左侧区未用 `.tree-list__aside` | L-102 | 树容器应有独立 class |
+| 右侧区未用 `.tree-list__main` | L-103 | 右侧内容区应有独立 class |
+| 缺少 `jh-drag-col` 分割条 | L-104 | 应支持拖拽调整左右宽度 |
+| 树节点点击后未触发右侧列表刷新 | L-105 | `@node-click` 应调用 `reload()` 并传入分类参数 |
+| 左侧树无搜索/过滤 | L-106 | 数据量大时应加 `filter-node-method` |
+
+---
+
+## Repair — 修复指引
+
+### 标准结构
+
+```vue
+<template>
+  <div class="tree-list">
+    <!-- 左侧树 -->
+    <div class="tree-list__aside" :style="{ width: treeWidth + 'px' }">
+      <el-tree
+        :data="treeData"
+        :props="{ label: 'name', children: 'children' }"
+        node-key="id"
+        highlight-current
+        @node-click="handleNodeClick"
+      />
+    </div>
+
+    <!-- 拖拽分割条 -->
+    <jh-drag-col v-model="treeWidth" :min="180" :max="360" />
+
+    <!-- 右侧内容 -->
+    <div class="tree-list__main">
+      <!-- 复用 list-page 结构（搜索 + 工具栏 + 表格 + 分页） -->
+      <div class="list-page">
+        <div class="list-page__query"> ... </div>
+        <div class="list-page__toolbar"> ... </div>
+        <div class="list-page__table">
+          <BaseTable :hook="page" empty-text="暂无数据" :columns="columns" />
+        </div>
+        <div class="list-page__pagination">
+          <jh-pagination :hook="page" />
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+const treeWidth = ref(240);
+
+function handleNodeClick(node) {
+  searchParams.value.classifyId = node.id;
+  page.reload();
+}
+</script>
+```
+
+### SCSS 对应
+
+```scss
+// styles/layouts/_tree-list.scss 已提供基础骨架
+// 业务侧如需定制左侧宽度：
+.tree-list__aside {
+  min-width: 180px;
+  max-width: 400px;
+}
+```
+
+---
+
+## 关联资源
+
+- 样式实现：[styles/layouts/_tree-list.scss](../../../styles/layouts/_tree-list.scss)
+- 拖拽列样式：[styles/vendors/_jh-drag-col.scss](../../../styles/vendors/_jh-drag-col.scss)
+- 代码模板：[templates/tree-list/TPL-TREE-LIST.md](../../../templates/tree-list/TPL-TREE-LIST.md)
+- 相关 skills：[layouts/list-page](../list-page/SKILL.md) | [vendors/jh-components](../../vendors/jh-components/SKILL.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# ops/audit SKILL
+
+## 一、审计目标
+
+对目标项目做**完整只读扫描**，产出：
+
+1. 接入完整性报告（I001-I005：tokens/styles/runtime/skills 是否接入）
+2. 风格合规报告（R001-R018：按 layer/vendor 分组）
+3. 优先级建议（高危 → 中危 → 低危 三层）
+
+**本 skill 不修改任何文件，仅审计和报告。**
+
+---
+
+## 二、审计命令
+
+### 全量审计（推荐）
+
+```bash
+npx wl-ui all --project . --outFile audit-report.md
+```
+
+### 分层审计
+
+```bash
+# 仅看 L0 颜色 token 违规
+npx wl-ui scan --target src --layer L0 --outFile l0-report.md
+
+# 仅看 L1 Element Plus 控件问题
+npx wl-ui scan --target src --layer L1 --outFile l1-report.md
+
+# 仅看 L2 封装组件问题（vendor 层）
+npx wl-ui scan --target src --layer L2 --outFile l2-report.md
+
+# 化妆模式项目只看 L0/L1/L2（跳过 L3/L4）
+npx wl-ui scan --target src --mode skin --outFile skin-audit.md
+```
+
+### 精准 vendor 审计
+
+```bash
+# 仅扫描 BaseTable 相关规则
+npx wl-ui scan --target src --vendor base-table
+
+# 仅扫描 Element Plus 原生控件
+npx wl-ui scan --target src --vendor element
+```
+
+---
+
+## 三、AI 审计流程
+
+在 AI 编辑器中触发：
+
+```
+用 wl-ui 的 ops/audit skill 对当前项目做全量审计
+```
+
+**AI 执行步骤：**
+
+1. `npx wl-ui check --project .` → 接入完整性（I001-I005）
+2. `npx wl-ui scan --target src --output json --outFile /tmp/audit.json` → JSON 格式结果
+3. 读取 JSON，按如下格式汇报：
+
+```markdown
+## 审计摘要
+- 扫描文件数：XX
+- 发现问题数：XX（高危 X / 中危 X / 低危 X）
+- 接入完整性：✅ X 项通过 / ❌ X 项缺失
+
+### 高危（直接影响视觉一致性）
+| 规则 | 文件 | 行号 | 说明 |
+| R001 | src/pages/Foo.vue | 45 | 列缺少 align="center" |
+...
+
+### 修复建议（优先级排序）
+1. 运行 `npx wl-ui fix --target src --dry-run` 先预览 A 类自动修复
+2. 对 R009/R010 状态字段手工确认并应用 renderTagNode
+3. 对 L0 颜色违规批量替换为 CSS Token
+```
+
+4. 询问用户：是否进入修复阶段（`ops/fix` skill），还是只看报告？
+
+---
+
+## 四、接入完整性检查项（I001-I005）
+
+| 编号 | 检查项 | 说明 |
+|---|---|---|
+| I001 | tokens.css / base.css 已引入 | index.html `<head>` 中有 wl-skills-ui tokens |
+| I002 | styles 预设已引入 | SCSS 入口含 `@use '@agile-team/wl-skills-ui/styles...'` |
+| I003 | runtime preset 已安装 | main.ts 含 `installCommonPreset()` |
+| I004 | skills 已安装 | `.github/instructions/` 或 `.cursor/rules/` 等目录存在 wk-skills 文件 |
+| I005 | package.json 版本 | @agile-team/wl-skills-ui 版本 ≥ 0.3.0 |
+
+---
+
+## 关联资源
+
+- 修复：[ops/fix](../fix/SKILL.md)
+- 渐进迁移：[runtime/migration](../../runtime/migration/SKILL.md)
+- 全审计流程：[_flows/full-audit]( ../../_flows/full-audit.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  wl-ui fix 自动修复指南 — A 类问题（attr 缺失、hex 颜色）的批量自动修复，
+  支持 dry-run 预览，幂等安全，不修改已符合标准的文件。
+applyTo: "**"
+---
+
+# 自动修复指南
+
+## 可自动修复的问题（A 类）
+
+| 规则      | 修复内容                                          |
+| --------- | ------------------------------------------------- |
+| R006      | input/select/date/time 补充 `size="small"`        |
+| R007      | date/time picker 合并 `style="width:100%"`        |
+| R041      | el-button / BaseToolbar 缺失尺寸时补 `small`       |
+| R005*     | 常见静态动作文案确定性补语义 icon                  |
+| R002/R003 | el-table / BaseTable 补充 `empty-text="暂无数据"` |
+| R001      | el-table-column 补充 `align="center"`             |
+| R014      | selection 列补充 `header-align="center"`          |
+| R021      | BaseTable 修正为 `render-type="agGrid"`           |
+| R016/R017 | style/template 块 hex 颜色替换为 CSS Token        |
+
+完整可自动修复清单来自 `standards/rules.json#autoFixable`，发布检查会与
+`scanner/fix.mjs` 的实际实现逐项比对。R005* 是保守的机会式修复：只处理已知静态
+动作文案，因此规则本身仍标记为不可完整自动修复，动态或未知文案会继续报告。
+
+## 命令
+
+```bash
+# 先预览（推荐！）
+npx wl-ui fix --target src --dry-run
+
+# 确认后执行
+npx wl-ui fix --target src
+
+# 只修复特定目录
+npx wl-ui fix --target src/views/check
+```
+
+## 修复后验证
+
+```bash
+npx wl-ui scan --target src --outFile /tmp/after-fix.md
+```
+
+`fix` 命令本身会自动复检并打印剩余 issue/error 数；独立报告用于评审留痕。增加 `--fail-on-error` 可在复检仍有 error 时非零退出。
+
+## 无法自动修复（B 类，需 AI 辅助人工处理）
+
+| 规则      | 原因                                           |
+| --------- | ---------------------------------------------- |
+| R004/R013 | 操作列结构需人工确认                               |
+| R005      | 动态或未知动作文案的图标语义需人工确认             |
+| R042      | 裸 date-picker 选择器需区分输入与弹层意图          |
+| R008      | labelWidth 需人工判断布局需求                  |
+| R009/R010 | 状态字段语义需人工识别                         |
+| R015      | 弹窗内操作按钮结构改造                         |
+| R018      | script/Canvas 配色需迁移到业务 CHART_COLORS    |
+| R027/R028 | 选择器作用域与圆角语义需人工确认               |
+
+## 幂等性保证
+
+修复脚本可重复运行，已符合标准的文件不会被修改。正式写入前自动创建项目内快照；快照创建失败时零写入，写入中断会恢复本轮已改文件。可用 `wl-ui snapshot rollback` 回退。
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# ops/migrate SKILL
+
+## 一、迁移目标
+
+从 **Skin 模式**（只有 L0/L1/L2 化妆）升级到 **Native 模式**（全五层），同时保证：
+- 迁移期间业务功能不中断
+- 按模块/按 vendor 逐步替换，不做大爆炸式重写
+- 每步可回退
+
+---
+
+## 二、迁移触发条件
+
+以下任意条件满足时，建议启动对应模块的迁移：
+
+| 条件 | 建议迁移内容 |
+|---|---|
+| 拿到封装组件源码（如 BaseTable）| 把 L2 化妆 → L4 runtime 调用 |
+| 新增模块（CRUD 列表页）| 直接用 Native 骨架（list-page + defineColumns）|
+| 发现大量 R009 状态字段纯文本 | 迁移到 renderTagNode / COLUMN_AUTO_MAP |
+| 性能优化需要（减少全局 CSS override）| L2 vendor 选择器精细化 |
+| 业务 preset 需要扩展 | 用 createPreset() / installPreset() 替代手写 map |
+
+---
+
+## 三、迁移安全顺序
+
+```
+Step 1 — 接入 design/tokens/base.css        (可立即，无风险)
+Step 2 — 接入 styles/presets/skin            (可立即，只加不改)
+Step 3 — 接入 styles/presets/full            (替换 skin，确认布局无冲突)
+Step 4 — 接入 installCommonPreset()          (仅影响新页面，旧页面不动)
+Step 5 — 新模块用 defineColumns + renderOps  (只影响新写代码)
+Step 6 — 旧模块逐批迁移 columnsDef → defineColumns
+Step 7 — 旧 vendor 化妆层（_base-table.scss 等）按需保留或删除
+```
+
+---
+
+## 四、AI 辅助迁移流程
+
+在 AI 编辑器中触发：
+
+```
+用 wl-ui 的 ops/migrate skill 帮我迁移 src/pages/safety/ 目录
+```
+
+**AI 执行步骤：**
+
+1. 扫描目标目录：`npx wl-ui scan --target src/pages/safety --output json`
+2. 识别迁移优先级：
+   - R013（columnsDef 旧格式）→ 优先迁移到 `defineColumns`
+   - R004/R005（按钮规则）→ 用 `renderOps` 替换
+   - R009（状态字段）→ 注册到 COLUMN_AUTO_MAP
+3. 逐文件迁移，**每文件迁移后立即验证**（重跑 scan 确认问题归零）
+4. 汇报迁移结果
+
+---
+
+## 五、具体迁移操作
+
+### 5.1 columnsDef → defineColumns
+
+```typescript
+// ❌ 旧写法
+columnsDef() {
+  return [
+    { label: '名称', name: 'name' },
+    { label: '状态', name: 'enableStatus', logicType: BusLogicDataType.dict },
+    { label: '操作', operations: [
+      { name: 'edit', label: '编辑', onClick: (row) => modal.edit(row.id) },
+    ]},
+  ];
+}
+
+// ✅ 新写法
+import { defineColumns, renderOps } from '@agile-team/wl-skills-ui/runtime';
+
+columnsDef() {
+  return defineColumns([
+    { label: '名称', name: 'name' },
+    { label: '状态', name: 'enableStatus' },           // 自动 Tag（已注册）
+    { label: '操作', width: 100, align: 'center',
+      defaultSlot: ({ row }) => renderOps([
+        { type: 'edit', onClick: () => modal.edit(row.id) },
+      ]),
+    },
+  ]);
+}
+```
+
+### 5.2 新增 COLUMN_AUTO_MAP 字段
+
+当项目有自定义状态字段时，扩展到 common preset：
+
+```typescript
+// runtime/presets/my-biz.ts（用 wl-ui add-preset my-biz 生成）
+import { createPreset } from '@agile-team/wl-skills-ui/runtime';
+
+export const installMyBizPreset = createPreset({
+  name: 'my-biz',
+  columnAutoMap: {
+    myStatus: {
+      width: 90, align: 'center',
+      defaultSlot: ({ row }) => renderMyStatus(row.myStatus),
+    },
+  },
+  tagMaps: {
+    myStatus: {
+      '0': { label: '待处理', type: 'info' },
+      '1': { label: '处理中', type: '' },
+      '2': { label: '已完成', type: 'success' },
+    },
+  },
+});
+```
+
+### 5.3 styles/presets/skin → full 切换
+
+```scss
+// 确认没有布局冲突后，把：
+@use '@agile-team/wl-skills-ui/styles/presets/skin' as *;
+// 改为：
+@use '@agile-team/wl-skills-ui/styles' as *;
+```
+
+**验证方式：** 跑冒烟测试，确认以下页面类型视觉无异常：
+- 列表页（.list-page 骨架生效）
+- 左树右表页（.tree-list 骨架生效）
+- 表单弹窗（.form-dialog 骨架生效）
+
+---
+
+## 六、回退机制
+
+每步迁移都是**加法或替换**，不是删除原有代码：
+
+| 步骤 | 回退方式 |
+|---|---|
+| styles full → skin | 改回 `@use '...presets/skin'` |
+| defineColumns 迁移 | git revert 单个文件 |
+| installCommonPreset | 注释掉 `installCommonPreset()` 调用 |
+
+---
+
+## 关联资源
+
+- 渐进迁移流程：[_flows/progressive-migrate](../../_flows/progressive-migrate.md)
+- 审计先行：[ops/audit](../audit/SKILL.md)
+- 运行时迁移：[runtime/migration](../../runtime/migration/SKILL.md)
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  wl-ui scan 扫描器使用指南 — 如何运行风格扫描、接入完整性检查，解读报告格式。
+applyTo: "**"
+---
+
+# 扫描器使用指南
+
+## 命令速查
+
+```bash
+# 一站式（推荐）：接入完整性 + 风格扫描 + 生成 Markdown 报告
+npx wl-ui all --project . --outFile report.md
+
+# 仅风格扫描
+npx wl-ui scan --target src
+
+# 仅接入完整性检查（I001~I004）
+npx wl-ui check --project .
+
+# JSON 格式输出（方便程序处理）
+npx wl-ui scan --target src --output json
+
+# 低 token / PR 增量（MCP 默认使用 compact）
+npx wl-ui scan --target src --changed --base origin/main --output compact
+```
+
+## 参数说明
+
+| 参数              | 默认值                   | 说明                                           |
+| ----------------- | ------------------------ | ---------------------------------------------- |
+| `--target`        | `./src`                  | Vue 文件扫描根目录                             |
+| `--project`       | `.`                      | 项目根目录（用于接入完整性检查）               |
+| `--output`        | `markdown`               | 输出格式：`markdown` \| `json` \| `compact`    |
+| `--changed`       | `false`                  | 仅扫描 Git 变更 Vue 文件，解析失败时回退全量    |
+| `--base`          | `HEAD`                   | 增量基线，例如 `origin/main`                    |
+| `--exclude`       | `node_modules,dist,.git` | 排除目录（逗号分隔）                           |
+| `--outFile`       | `""`                     | 写入文件路径，为空则输出到 stdout              |
+| `--fail-on-error` | `false`                  | 存在 error 级别问题时以非零退出码退出（CI 用） |
+
+## CI 集成
+
+```yaml
+# .github/workflows/style-check.yml
+- name: wl-skills-ui 风格检查
+  run: npx wl-ui all --project . --fail-on-error
+```
+
+## 报告格式说明
+
+`compact` 使用 `wl-ui-scan.compact.v1`：问题按文件分组，每项为
+`[line, rule, severity, description, suggestion]`，适合 MCP/AI；`json` 保留完整字段，
+`markdown` 面向人工评审。
+
+```
+一、接入完整性仪表盘
+  ✅ I001 — tokens.css 已在 index.html 引入
+  ✅ I002 — 全局 SCSS 已引入 wl-skills-ui 样式
+  ✅ I003 — runtime 已被引用
+  ✅ I004 — peerDependencies 版本满足要求
+
+二、风格扫描摘要
+  扫描文件数：43  总问题数：127
+
+三、按规则统计
+  | 规则 | 类别 | 严重级 | 问题数 |
+  ...
+
+四、问题明细（按严重级）
+  ### error
+  - src/views/check/list.vue:34 [R001] el-table-column 缺少 align="center"
+  ...
+```
+
+## 退出码
+
+| 退出码 | 含义                                             |
+| ------ | ------------------------------------------------ |
+| `0`    | 扫描完成（无论是否有问题，除非 --fail-on-error） |
+| `1`    | 存在 error 级别问题且设置了 --fail-on-error      |
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# 设计 Token 使用规范
+
+## 核心原则
+
+**任何 hex 颜色值在业务代码中都是禁止的**，必须使用 `--el-color-*` CSS 变量。
+
+---
+
+## Token 速查表
+
+### 品牌色
+
+```css
+--el-color-primary         /* #002a8f — 主按钮常规/链接/选中 */
+--el-color-primary-light-1 /* #1a3f9a — 主按钮悬停 */
+--el-color-primary-dark-1  /* #002681 — 主按钮点击 */
+--el-color-primary-light-7 /* #b2bfdd — 主按钮禁用 */
+--el-color-primary-light-9 /* #e5eaf4 — 主色浅底/Tag背景 */
+--el-color-success         /* #2bb268 — 成功/正常/启用 */
+--el-color-warning         /* #ea9a13 — 警告/待处理 */
+--el-color-danger          /* #bb2d3f — 危险/失败/停用 */
+--el-color-info           /* #909399 — 中性/辅助 */
+```
+
+### 文本色
+
+```css
+--el-text-color-primary    /* rgba(0,0,0,0.85) — 主要文本 */
+--el-text-color-regular    /* rgba(0,0,0,0.65) — 次要文本 */
+--el-text-color-secondary  /* rgba(0,0,0,0.45) — 辅助文本 */
+```
+
+### 边框/填充
+
+```css
+--el-border-color          /* #d9d9d9 */
+--el-fill-color-lighter    /* 表格 header 背景 */
+```
+
+---
+
+## 常见违规与修正
+
+```diff
+/* R016: style 块 */
+- color: #4368ff;
++ color: var(--el-color-primary);
+
+- background: #fb2323;
++ background: var(--el-color-danger);
+
+- border-color: #0cc859;
++ border-color: var(--el-color-success);
+
+/* R017: template 内联 style */
+- <span :style="{ color: '#ffaf27' }">
++ <span :style="{ color: 'var(--el-color-warning)' }">
+
+/* R018: script 中 ECharts 等配置 */
+- color: '#4368ff'
++ color: 'var(--el-color-primary)'  /* 或使用 CHART_COLORS.primary */
+```
+
+---
+
+## 扫描与自动修复
+
+```bash
+# 检测 hex 颜色违规
+npx wl-ui scan --target src --outFile color-report.md
+
+# 自动修复（仅修已知 Token 的 hex，不修 ECharts 等特殊场景）
+npx wl-ui fix --target src
+```
+
+## 已覆盖的 hex 映射
+
+| hex                           | → CSS Token                       |
+| ----------------------------- | --------------------------------- |
+| `#409eff` `#3a7afe` `#4368ff` `#2254f4` `#002a8f` | `var(--el-color-primary)`         |
+| `#fb2323` `#f56c6c`           | `var(--el-color-danger)`          |
+| `#0cc859` `#67c23a`           | `var(--el-color-success)`         |
+| `#ffaf27` `#e6a23c`           | `var(--el-color-warning)`         |
+| `#ecf5ff`                     | `var(--el-color-primary-light-9)` |
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# 历史项目 UI 迁移 Skill
+
+## 适用场景
+
+- 已有业务系统从零接入 wl-skills-ui
+- 旧版 jh-ui 系统升级到新规范
+- 统一多个历史项目到同一 UI 标准
+
+---
+
+## 迁移五步法
+
+### Step 1 — 安装依赖
+
+```bash
+pnpm add @agile-team/wl-skills-ui
+```
+
+### Step 2 — 接入 CSS Tokens
+
+在 `index.html` `<head>` 最顶部追加（必须在所有样式之前）：
+
+```html
+<link
+  rel="stylesheet"
+  href="/node_modules/@agile-team/wl-skills-ui/design/tokens/base.css"
+/>
+```
+
+### Step 3 — 替换 SCSS 入口
+
+在全局 SCSS 入口（`src/assets/style/main.scss` 或 `src/styles/index.scss`）追加：
+
+```scss
+@use "@agile-team/wl-skills-ui/styles" as *;
+// 可选 portal 视觉增强：
+// @use '@agile-team/wl-skills-ui/styles/portal';
+```
+
+> 注意：如果项目有旧的 element-plus 覆盖样式，确认无冲突后可删除旧样式。
+
+### Step 4 — 注册运行时预设
+
+在 `src/main.ts` 中（`app.mount` 之前）：
+
+```typescript
+import { installCommonPreset } from "@agile-team/wl-skills-ui/runtime/common-preset";
+installCommonPreset();
+```
+
+这会把所有通用业务字段（riskLevel / permitStatus / trainStatus 等）
+注册进 COLUMN_AUTO_MAP，之后使用 `defineColumns()` 包裹的列定义会自动渲染。
+
+### Step 5 — 迁移 columnsDef
+
+将所有 `defineColumns()` 调用从本地 `src/util/define-columns.ts` 改为 package：
+
+```typescript
+// ❌ 旧写法
+import { defineColumns } from "@/util/define-columns";
+import { renderOps } from "@/util/ag-cell-renders";
+
+// ✅ 新写法
+import { defineColumns, renderOps } from "@agile-team/wl-skills-ui/runtime";
+```
+
+然后运行扫描：
+
+```bash
+npx wl-ui all --project . --outFile migration-report.md
+```
+
+按报告逐步修复 R001~R018 违规项。
+
+---
+
+## 验收检查清单
+
+```bash
+npx wl-ui check --project .
+```
+
+所有 I001~I004 必须全部通过：
+
+- ✅ I001：`index.html` 中存在 `tokens.css` link 标签
+- ✅ I002：全局 SCSS 中引入 wl-skills-ui 样式
+- ✅ I003：`runtime` 已被引用（ag-cell-renders 或 package import）
+- ✅ I004：peer dependencies 版本满足要求
+
+---
+
+## 常见迁移问题
+
+| 问题                          | 解决方案                                          |
+| ----------------------------- | ------------------------------------------------- |
+| 旧版 ag-cell-renders.ts 冲突  | 删除本地文件，全部改用 package import             |
+| SCSS `@use` vs `@import` 冲突 | 统一改为 `@use`，避免重复引入                     |
+| ElTagType 类型报错            | 确保 element-plus ≥ 2.2，不使用已废弃的 `""` type |
+| defineColumns 自动映射未生效  | 确认 `installCommonPreset()` 在 `mount` 前调用      |
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# UI 风格对齐 Skill
+
+## 一、工作流程（严格按顺序，不得跳过）
+
+### Phase 1 — 扫描（只读，不修改任何文件）
+
+```bash
+# 推荐：一站式扫描（接入完整性 + 风格 + 报告）
+npx wl-ui all --project [项目根目录] --outFile /tmp/scan-result.md
+
+# 单独风格扫描
+npx wl-ui scan --target [项目src目录] --outFile /tmp/scan-result.md
+
+# 接入完整性检查
+npx wl-ui check --project [项目根目录]
+```
+
+读取扫描输出，提取：
+
+- 接入完整性 I001~I004 通过情况
+- 总 issue 数、按规则分类统计（R001~R018）
+- 每个 issue：文件路径 + 行号 + 规则 + 建议
+
+### Phase 2 — 汇报
+
+向用户展示摘要：
+
+```
+扫描结果摘要
+- 扫描文件数：XX
+- 发现问题数：XX（高危 X / 中危 X / 低危 X）
+
+高危（直接影响视觉一致性）
+| 规则 | 说明 | 数量 | 代表文件 |
+...
+```
+
+### Phase 3 — 确认（强制门槛）
+
+询问用户：
+
+1. 是否全量修复？还是指定规则/文件？
+2. 无法自动修复的规则（R008/R009/R010/R013）是否手动处理？
+
+**未经用户确认，禁止修改任何文件。**
+
+### Phase 4 — 修复
+
+按确认范围执行：
+
+- **A 类（attr 缺失 / hex 颜色）** → `npx wl-ui fix --target [src] [--dry-run]`
+- **B 类（结构改造，R004/R013/R015）** → AI 逐文件编辑
+
+每修复一个文件，输出该文件修改摘要。
+
+### Phase 5 — 验证
+
+重新执行 Phase 1 扫描，验证 issue 数量归零或达到预期水平。
+
+---
+
+## 二、规则总览（指针式）
+
+**所有 R-rule 的权威定义统一在 `standards/rules.json`**。本节只列分类与编号映射，禁止在此复述规则细节（避免漂移）。AI 需要某条规则的完整定义时，调用 MCP `wl_ui_describe_rule R001` 或读取 `standards/rules.json`。
+
+| 分类 | 编号 | 关联 SKILL |
+| --- | --- | --- |
+| 表格 / 列定义 | R001 R002 R003 R012 R014 R021 R022 | `element/el-table`, `vendors/base-table` |
+| 按钮 / 操作列 | R004 R005 R015 | `element/el-table`, `layouts/list-page`, `layouts/form-dialog` |
+| 表单 / 控件 | R006 R007 R008 | `element/el-form`, `layouts/form-dialog` |
+| 弹窗 / 分页 | R011 | `element/el-dialog`, `layouts/form-dialog` |
+| 状态 / 分类 / 编号 / 字典 | R009 R010 R019 R020 | `element/el-tag` |
+| 颜色 / Token | R016 R017 R018 | `runtime/design-tokens` |
+| 组件族场景化 | R031–R037 | `element/component-family` |
+| 布局 / 操作组合 | R013（人工评审） | `ops/migrate`, `runtime/migration` |
+
+> 历史 ID 漂移：v1.8.0 起 `tag.mjs` 中的旧 R017/R018 重号为 **R019/R020**（避免与 `color.mjs` 的 R017/R018 冲突）；旧 ID 在 `rules.json` 通过 `aliases` 兼容。
+
+## 三、可否自动修复
+
+由 `standards/rules.json` 的 `autoFixable` 字段权威决定，不在此另行声明。发布检查会把该字段与 `scanner/fix.mjs` 的实现清单逐项比对；`npx wl-ui fix --target src --dry-run` 仅预览这些已实现的安全修复。
+
+---
+
+## 四、执行约束
+
+1. Phase 3 用户确认是强制门槛，未确认不得修改文件
+2. 每次只修改一类规则，修改后立即验证该类归零再继续
+3. 不修改路径：`node_modules/`、`dist/`、`*.min.js`、用户标注为"已手动调整"的文件
+4. 脚本幂等：已符合标准的不会被二次修改
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+---
+description: |
+  AG Grid 列渲染规范 Skill — 使用 defineColumns + renderOps + renderTagNode 等运行时函数
+  实现 AG Grid 表格列的自动化配置、状态彩色 Tag、操作列图标按钮。
+applyTo: "**/*.{ts,vue}"
+---
+
+# AG Grid 列渲染规范
+
+## 核心原则
+
+1. 所有列定义用 `defineColumns()` 包裹 — 自动应用已注册字段映射，并默认让叶子列与分组表头居中；显式左右对齐优先，特殊页面可传 `{ defaultAlign: null }` 退出
+2. 操作列统一用 `renderOps([...])` — 图标按钮系统，自动分隔线 + stopPropagation
+3. 状态字段用 `renderTagNode()` / `renderClassifyTag()` — 彩色 Tag，见 tag-status/SKILL.md
+
+Skin/历史项目必须在 `main.ts` 引入一次
+`@agile-team/wl-skills-ui/runtime/auto`。它修复普通纯文本 flex 单元格的省略号，
+并在未配置平台原生 Tooltip 且真实溢出时兜底完整内容。编辑列、操作列、Tag、
+复选框、自定义 renderer、主动换行列和皮肤豁免区域不会被接管。
+
+> 与 `wl-skills-kit` 协同说明：本 Skill 负责 AG Grid/列渲染/操作列 runtime 能力，也要服务非 kit 项目的通用 AG Grid 场景。若扫描发现项目希望升级为团队最佳实践，再提示使用 `wl-skills-kit` 进行页面结构和工作流规范化；在此之前，`wl-skills-ui` 仍应保证样式和渲染能力可独立生效。
+
+> 行状态由包统一管控：hover 为品牌色 4% 浅底，selected 为 7% 浅底且优先于
+> hover。业务代码不要重写 `.ag-row-hover`、`.ag-row-selected` 或对应 AG
+> Grid 主题变量，也不要为了行状态修改编辑控件、校验态和语义单元格背景。
+
+---
+
+## 标准列定义写法
+
+```typescript
+import { defineColumns, renderOps, renderTagNode, renderBadge } from '@agile-team/wl-skills-ui/runtime';
+
+columnsDef(): TableColumnDesc<any>[] {
+  return defineColumns([
+    // ── 序号/选择列 ──
+    { type: 'index',     label: '序号', width: 60,  align: 'center' },
+    { type: 'selection', label: '',     width: 55,  align: 'center', headerAlign: 'center', fixed: 'left' },
+
+    // ── 普通数据列 ──
+    { name: 'riskNo',  label: '风险编号', width: 100 },   // renderBadge 已自动映射
+    { name: 'riskLevel', label: '风险分级', width: 90 }, // renderRiskLevel 已自动映射
+
+    // ── 自定义渲染列 ──
+    { name: 'status', label: '状态', width: 90,
+      defaultNode: ({ row }) => renderTagNode(row.status, MY_STATUS_MAP) },
+
+    // ── 操作列 ──
+    { label: '操作', width: 120, fixed: 'right',
+      defaultSlot: ({ row }) => renderOps([
+        { type: 'view', onClick: () => modal.view(row.id) },
+        { type: 'edit', show: !isReadonly.value, onClick: () => modal.edit(row.id) },
+        { type: 'del',  show: !isReadonly.value, onClick: () => handleDel(row.id) },
+      ])
+    },
+  ]);
+}
+```
+
+---
+
+## renderOps 操作类型
+
+| type   | 图标        | CSS 类       | 默认 title |
+| ------ | ----------- | ------------ | ---------- |
+| `view` | View        | `jh-op-view` | 查看       |
+| `edit` | Edit        | `jh-op-edit` | 编辑       |
+| `del`  | Delete      | `jh-op-del`  | 删除       |
+| `log`  | Document    | `jh-op-log`  | 记录       |
+| `ok`   | CircleCheck | `jh-op-ok`   | 审核       |
+| `send` | Upload      | `jh-op-send` | 提交       |
+
+---
+
+## COLUMN_AUTO_MAP 已注册字段
+
+使用 `defineColumns()` 包裹后，以下字段**无需手写 defaultNode**，自动渲染：
+
+| 字段名               | 渲染效果       | 需调用                       |
+| -------------------- | -------------- | ---------------------------- |
+| `enableStatus`       | 启用/停用 Tag  | `installCommonPreset()` 后自动 |
+| `riskLevel`          | 风险分级 Tag   | `installCommonPreset()` 后自动 |
+| `permitStatus`       | 作业票状态 Tag | 同上                         |
+| `trainStatus`        | 培训状态 Tag   | 同上                         |
+| `credentialStatus`   | 证书状态 Tag   | 同上                         |
+| `riskNo` / `checkNo` | 蓝色编号徽标   | 同上                         |
+| `ratingLevel`        | 彩色评级徽标   | 同上                         |
+
+完整列表见 `runtime/core/registry.ts` + `runtime/presets/common.ts`。
+
+---
+
+## 条件显示操作按钮
+
+```typescript
+renderOps([
+  { type: 'edit', show: canEdit.value,        onClick: ... },  // 响应式
+  { type: 'del',  show: row.status !== '3',   onClick: ... },  // 行级条件
+  { type: 'ok',   show: () => row.status === '2', onClick: ... }, // 函数形式
+])
+```
+
+> `show: false` 时按钮不渲染（不占位）。`show` 支持 `boolean | Ref<boolean> | () => boolean`。
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: vendors/base-table
+
+> Layer L2 · Vendor priority **#1**（Base > jh > C_/c_ > custom）
+
+## Detect（识别）
+
+满足以下任一条件即视为 Base 系列封装表格组件：
+
+| 维度 | 模式 |
+|---|---|
+| 标签名 | `<BaseTable>` / `<base-table>` / `<BaseDataTable>` / `<BaseList>` |
+| Import | `from '@/components/Base*'` / `from '@/components/base-*'` |
+| 类名 | `.base-table-wrapper` / `.base-table-container` / `[class^='base-table-']` |
+| Props | 通常包含 `columns` / `data` / `hook` / `renderType` |
+
+## Diagnose（判定）
+
+底层基于 Element Plus `el-table`，所有 R001-R003、R014 规则同样生效，但需注意：
+
+- ❌ 直接给 `<BaseTable>` 加内联 hex 颜色（应通过 token 或全局类名）
+- ❌ 用 `<el-button type="primary">` 当操作按钮（应用 `is-text` 文字按钮，沿用 R004）
+- ❌ 列头未居中（同 R001）
+- ❌ 缺 `empty-text="暂无数据"`（同 R003）
+- ❌ 项目未安装 `runtime/auto` 包级保护，导致动态 Picker/历史列绕过 `defineColumns()` 后没有超长省略与完整提示（同 R039）
+- ❌ 在 `<BaseTable>` 外层包裹自定义 padding 容器，破坏整体节奏
+
+## Repair（修复）
+
+### A 类（自动修）
+- 缺失 `empty-text` → 补 `empty-text="暂无数据"`
+- 普通文本列统一经 `defineColumns()` 自动补 `showOverflowTooltip: true`
+- Skin/历史项目启动入口统一引入 `@agile-team/wl-skills-ui/runtime/auto`，为未经过 `defineColumns()` 的普通文本列提供真实溢出兜底
+- 操作列按钮 `type="primary"` → 改为 `link` + `is-text`
+- 内联 hex → CSS 变量
+
+### 空状态智能修复
+- 主表、子表、展开行内表格都必须在各自表格区域内居中，不要用全页面或父表高度推断子表位置
+- 保持同一套空态图标和文字比例，不要因为嵌套表格另起一套尺寸风格
+- 文案根据实际上下文判断：只有确认存在组织树/左侧机构筛选时，才提示选择组织机构；否则使用“调整筛选条件”等通用描述
+
+### B 类（建议人工确认）
+- 替换为 `defineColumns(...)` 渲染（迁移到 L4 runtime，业务代码大幅精简）
+
+## 与 wl-skills-kit 的协同闭环
+
+本 Skill 必须保留对多种 BaseTable/封装表格写法的识别和样式覆盖能力，不要求老项目先改成 `wl-skills-kit` 最佳实践。扫描时先判断当前写法能否通过化妆层统一视觉；若用户希望进一步规范化业务代码，再提示可使用 `wl-skills-kit` 按团队模板重构为 `BaseTable render-type="agGrid" + cid + defineColumns/renderOps`。也就是说：`wl-skills-ui` 负责先统一样式，`wl-skills-kit` 负责可选的规范化生成/修复。
+
+## 全局样式来源
+
+`styles/vendors/_base-table.scss` — 已注入容器圆角、表头颜色、操作按钮间距；
+`runtime.defineColumns()` 优先接入平台原生 overflow tooltip；`runtime/auto` 为动态
+Picker 和历史普通文本列提供包级兜底。运行时只在 `scrollWidth > clientWidth` 时工作，
+并排除 Tag、操作列、编辑器、自定义 renderer、主动换行列和皮肤豁免区域。项目侧
+不要重复写样式或再注册第二套全局 Tooltip。
+
+## 未来源码迁移
+
+当 BaseTable 源码可用：
+1. 把 `_base-table.scss` 内容平迁到 `BaseTable.vue` 的 `<style scoped>`
+2. 在 `runtime/presets/` 新增 `base-table.ts` 提供原生 API
+3. 业务代码升级为 `<BaseTable :columns="defineColumns(...)" />`
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: vendors/c-components
+
+> Layer L2 · Vendor priority **#3** · 团队未来主流命名约定
+
+## Detect
+
+| 模式 | 示例 |
+|---|---|
+| PascalCase 标签 | `<C_Form>` / `<C_Table>` / `<C_DataPicker>` |
+| kebab-case 标签 | `<c-form>` / `<c-table>` / `<c-data-picker>` |
+| 类名 | `[class^='c-']` / `[class^='C_']` |
+| Import | `from '@/components/C*/'` / `from '@/business/c-*/'` |
+
+## Diagnose
+
+由于 C_* 属于团队约定的未来主流封装，识别到时优先按以下规则：
+- 检查内部是否调用了未对齐的 el-* 控件
+- 自行写的颜色硬编码 → 引导改用 token
+- 控件 size / 边距 / 圆角是否符合 element/_*.scss 规范
+
+## Repair
+
+A 类：补 size、补 empty-text、改 hex → token
+B 类：建议沉淀新的 `c-*` skill（拿到源码后）+ 在 `styles/vendors/_c-components.scss` 追加精确选择器
+
+## 扩展引导
+
+当出现新的 C_* 组件时，请把组件名称、典型 DOM 结构添加到本文件 + `_c-components.scss`，
+便于后续 AI 精确识别。
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: vendors/custom-wrappers
+
+> Layer L2 · Vendor priority **#4**（兜底）
+
+## Detect
+
+无统一前缀，但满足以下任一即视为自封装：
+
+- 路径：`src/components/*.vue`（PascalCase 单文件）
+- Import：`from '@/components/XxxXxx'`
+- DOM 内部一定包含 `el-*` 元素（否则不属于本 skill）
+
+## 探测策略（AI 必读）
+
+由于没有命名规律，AI 应：
+1. 跟随 `<script setup>` 中的 `import` 找到组件源码
+2. 如能读到源码 → 按 **element-plus 规则**直接修复源码
+3. 如不能读到源码 → 走"化妆模式"：在 `styles/vendors/_custom-wrappers.scss` 追加包装类
+4. 输出"建议封装迁移到 C_/c_ 前缀"作为优化建议
+
+## Diagnose（典型问题）
+
+- 内部 `el-input` 没 `size="small"` → 但封装可能转发了 size prop，先确认源码
+- 内部 hex 颜色 → 应改 token
+- 内部布局魔法数 padding/margin → 建议改用 layouts/ 层 class
+
+## Repair
+
+### A 类（仅当能读到源码）
+- 同 element/* skill 的 A 类规则
+
+### B 类
+- 输出"建议把该组件改名为 C_*/c_* 前缀，纳入团队规范" 的修复建议
+- 在 `_custom-wrappers.scss` 注入 .{业务类名} 包装层覆盖
+
+## 与 C_/c_ 的迁移路径
+
+custom → 改名为 C_*/c_* → 进入 vendors/c-components 流程 → 拿到源码后从 L2 迁移到 L4 runtime
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: vendors/jh-components
+
+> Layer L2 · Vendor priority **#2**
+
+## Detect（识别）
+
+所有 `<jh-*>` 标签均归入本 Skill。下表是当前项目集群的代表性基线，不是完整清单。
+
+| 类型          | 子组件        | 标签              | 关键类名                                                                                                                   | 治理方式                                     |
+| ------------- | ------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| SCSS 皮肤适配 | `@jhlc/jh-ui` | —                 | `.com-text` / `.text-line-2` / `.com-input` / `.com-picker` / `.com-reference-picker` / `.com-textarea` / `.com-input-tip` | `styles/vendors/_jh-ui.scss`                 |
+| 专项样式覆盖  | jh-tree       | `<jh-tree>`       | `.jh-tree` / `.base-tree`                                                                                                  | `styles/vendors/_jh-tree.scss`               |
+| 专项样式覆盖  | jh-pagination | `<jh-pagination>` | `.jh-pagination`                                                                                                           | `styles/vendors/_jh-pagination.scss`         |
+| 专项样式覆盖  | jh-drag-col   | `<jh-drag-col>`   | `.drag-col-container` / `.drag-left` / `.slider-col`                                                                       | `styles/vendors/_jh-drag-col.scss`           |
+| 专项样式覆盖  | jh-drag-row   | `<jh-drag-row>`   | `.drager_row` / `.drager_top` / `.drager_bottom` / `.slider_row`                                                           | `styles/vendors/_jh-drag-row.scss`           |
+| 通用规则治理  | jh-table      | `<jh-table>`      | `.jh-table`                                                                                                                | 继承 L0 tokens + L1 table 视觉原则           |
+| 通用规则治理  | jh-form       | `<jh-form>`       | `.jh-form`                                                                                                                 | 继承 L0 tokens + L1 form 视觉原则            |
+| 通用规则治理  | 其它 jh-\*    | `<jh-*>`          | `.jh-*` / 组件内部 Element Plus 类                                                                                         | 先按 jh 通用规则治理，复杂结构再升级专项样式 |
+
+### `@jhlc/jh-ui` SCSS 皮肤包识别
+
+**推荐组合（钉死版本）**：`@jhlc/jh-ui@3.1.0` + `element-plus@2.2.6-prod.3`。详见 `docs/compat-matrix.md` 与 `skills/_meta/_compat/vendors.json` 的 `jh.compat` 字段。
+
+项目同时安装 `@jhlc/jh-ui` 与 `element-plus@2.2.x` 时，输入控件 DOM 为 `.el-input > .el-input__inner`（**无 `.el-input__wrapper`**，EP 2.3.0 起才引入），表单 label 文本被包成 `<span class="com-text">` 或 `.text-line-2`，并由 `.has-colon .com-text:after` / `.text-line-2:after` 注入冒号。`_jh-ui.scss` 已精准覆盖：
+
+- label `.com-text` / `.text-line-2` 单行省略 + has-colon 冒号屏蔽
+- EP 2.2.x `.el-input__inner` 26px 高度、圆角 / focus / error 三态
+- jh-picker / reference-picker 的 `.com-picker` / `.com-reference-picker` 输入高度兜底
+- common-core 多标签/人员选择器的 `.com-input-multi-tag-wrap` 使用 26px 最小高度并允许标签换行自然增高；只由外层绘制统一状态边框，内部编辑 input 不重复描边
+- common-core 复合结构统一登记在 `standards/component-structures.json`；R040 遇到未登记的疑似 picker/multiple/tag 混合 wrapper 时只提示人工核对，不允许直接放大通用 Element 选择器
+- jh-select / jh-date-picker 的 `.el-select.is-focus` / `.el-input.is-focus` 兼容
+- 必填星号在 inline-flex label 下显式声明颜色
+
+**反例**（常见错误覆盖姿势）：
+
+- ❌ 在 jh-ui 项目里用 `.el-input__wrapper.is-focus` —— EP 2.2.x 没有 `__wrapper`，规则永不生效。
+- ❌ 直接给 `.el-form-item__label` 写 `text-overflow: ellipsis` —— jh-ui 把它设为 `inline-flex`，文本在 `.com-text` 里，省略不会触发。
+- ❌ 给 `.el-form-item__label` 加 `padding-right` 期望腾出冒号位 —— 表单 label 不强制冒号，`.has-colon .com-text:after` / `.text-line-2:after` 已由 `_jh-ui.scss` 统一屏蔽。
+- ❌ 在不确定 EP 版本的情况下下笔修复 —— 必须先跑 `wl_ui_detect_skin` 或 `wl-ui check` 看 I005 结果。
+
+## Diagnose
+
+- ❌ 自行给 `.jh-tree` 写颜色覆盖（应用全局 `vendors/_jh-tree.scss`）
+- ❌ jh-drag-col 内自定义 padding 破坏拖拽条对齐
+- ❌ jh-drag-row 上下分栏缺可收缩高度链，拖动后仅靠 pane 的 `overflow:hidden` 裁切 AG Grid；必须接入 `runtime/auto`，由 ResizeObserver 通知表格内部重布局，禁止给外层随意加滚动条
+- ❌ 页面自行重画 `.slider_row`；手柄必须统一使用 `_jh-drag-row.scss` 的细分隔线 + 三点胶囊
+- ❌ jh-pagination 未对齐到右侧（同 R011）
+- ❌ jh-form 内不用 `size="small"` 控件（同 R006）
+- ❌ 发现新的复杂 `<jh-*>` 组件后只在页面局部写补丁，而不沉淀到 L2 Project Vendors
+- ❌ 新复合结构未登记边框所有者、高度策略、内部无描边层与 Teleport 出口就直接写全局覆盖（R040）
+
+## Repair
+
+### A 类
+
+- 控件 size 缺失 → 补 `size="small"`
+- 表单内日期选择器无宽度 → `style="width:100%"`（R007）
+
+### B 类
+
+- 直接全局覆盖 `.jh-*` → 改为引入 `wl-skills-ui/styles` 由 vendors 层处理
+- `jh-drag-row + AG Grid` → Skin 项目除样式外在启动入口引入一次 `@agile-team/wl-skills-ui/runtime/auto`；Native 项目使用 `installCommonPreset()`，详见 `docs/split-grid-resize.md`
+- 新的复杂 `<jh-*>` 组件 → 先判断是否只是 Element Plus 薄封装；若不是，应新增 `styles/vendors/_jh-xxx.scss` 和对应 Skill/检测规则
+
+## 全局样式来源
+
+- `styles/vendors/_jh-ui.scss`
+- `styles/vendors/_jh-tree.scss`
+- `styles/vendors/_jh-pagination.scss`
+- `styles/vendors/_jh-drag-col.scss`
+- `styles/vendors/_jh-drag-row.scss`
+
+## 新增 jh 专项覆盖准入
+
+满足任一条件时，应从通用规则治理升级为专项样式覆盖：
+
+- 组件内部包含多个 Element Plus 组件或复杂 DOM 结构
+- 默认样式明显偏离当前项目集群 tokens / spacing / radius
+- 高频出现在列表、树表、弹窗、详情、上传、流程等核心页面
+- scanner 或人工审计反复发现相同视觉问题
+- AI 按通用规则无法稳定修复
+
+
+---
+
+# Cline UI 风格对齐规则
+
+> 由 @agile-team/wl-skills-ui 自动生成。请勿手动编辑。
+> 更新方式：npx wl-ui update
+
+---
+
+
+# Skill: vendors/unknown-wrapper
+
+> 兜底探测器 — 当组件不属于已知任何 vendor 时启用
+
+## 工作方式
+
+1. **遍历 import**：识别所有非 element-plus 的组件标签
+2. **匹配 vendor skill**：
+   - Base* → vendors/base-table（如是表格）/ vendors/base-components
+   - jh-* → vendors/jh-components
+   - C_*/c_* → vendors/c-components
+   - 其他 → vendors/custom-wrappers
+3. **若仍未识别**：
+   - 输出"未识别的封装组件 `<XxxYy>`"
+   - 给出"请在 `skills/vendors/_registry.md` 追加该组件的识别规则"建议
+   - 不修改源码，仅输出诊断报告
+
+## DOM 推断表（兜底）
+
+| 内部 DOM 包含 | 推断为 |
+|---|---|
+| `.el-table` | 表格类 → 应用 R001/R002/R014 |
+| `.el-form` | 表单类 → 应用 R006/R008 |
+| `.el-dialog` | 弹窗类 → 应用 R011/R015 |
+| `.el-pagination` | 分页类 |
+| `.ag-root-wrapper` | AG Grid → 走 vendors/ag-grid |
+
+## 输出格式
+
+```
+[unknown-wrapper] 检测到未识别封装：<XxxYyy>（src/views/foo.vue:42）
+  推断类型：表格类（内部含 .el-table）
+  应用规则：R001, R002, R014
+  化妆建议：在 styles/vendors/_custom-wrappers.scss 追加：
+    .xxx-yyy { /* 复用 vendors/_base-table.scss 的覆盖 */ }
+  扩展建议：把该组件信息追加到 skills/vendors/c-components/SKILL.md（若团队约定改前缀）
+```

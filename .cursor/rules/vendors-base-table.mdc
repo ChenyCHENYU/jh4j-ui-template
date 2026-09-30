@@ -1,0 +1,67 @@
+---
+description: BaseTable / <base-table> 系列封装组件的识别、诊断和修复规则。
+globs: **/*.vue
+alwaysApply: false
+---
+
+# Skill: vendors/base-table
+
+> Layer L2 · Vendor priority **#1**（Base > jh > C_/c_ > custom）
+
+## Detect（识别）
+
+满足以下任一条件即视为 Base 系列封装表格组件：
+
+| 维度 | 模式 |
+|---|---|
+| 标签名 | `<BaseTable>` / `<base-table>` / `<BaseDataTable>` / `<BaseList>` |
+| Import | `from '@/components/Base*'` / `from '@/components/base-*'` |
+| 类名 | `.base-table-wrapper` / `.base-table-container` / `[class^='base-table-']` |
+| Props | 通常包含 `columns` / `data` / `hook` / `renderType` |
+
+## Diagnose（判定）
+
+底层基于 Element Plus `el-table`，所有 R001-R003、R014 规则同样生效，但需注意：
+
+- ❌ 直接给 `<BaseTable>` 加内联 hex 颜色（应通过 token 或全局类名）
+- ❌ 用 `<el-button type="primary">` 当操作按钮（应用 `is-text` 文字按钮，沿用 R004）
+- ❌ 列头未居中（同 R001）
+- ❌ 缺 `empty-text="暂无数据"`（同 R003）
+- ❌ 项目未安装 `runtime/auto` 包级保护，导致动态 Picker/历史列绕过 `defineColumns()` 后没有超长省略与完整提示（同 R039）
+- ❌ 在 `<BaseTable>` 外层包裹自定义 padding 容器，破坏整体节奏
+
+## Repair（修复）
+
+### A 类（自动修）
+- 缺失 `empty-text` → 补 `empty-text="暂无数据"`
+- 普通文本列统一经 `defineColumns()` 自动补 `showOverflowTooltip: true`
+- Skin/历史项目启动入口统一引入 `@agile-team/wl-skills-ui/runtime/auto`，为未经过 `defineColumns()` 的普通文本列提供真实溢出兜底
+- 操作列按钮 `type="primary"` → 改为 `link` + `is-text`
+- 内联 hex → CSS 变量
+
+### 空状态智能修复
+- 主表、子表、展开行内表格都必须在各自表格区域内居中，不要用全页面或父表高度推断子表位置
+- 保持同一套空态图标和文字比例，不要因为嵌套表格另起一套尺寸风格
+- 文案根据实际上下文判断：只有确认存在组织树/左侧机构筛选时，才提示选择组织机构；否则使用“调整筛选条件”等通用描述
+
+### B 类（建议人工确认）
+- 替换为 `defineColumns(...)` 渲染（迁移到 L4 runtime，业务代码大幅精简）
+
+## 与 wl-skills-kit 的协同闭环
+
+本 Skill 必须保留对多种 BaseTable/封装表格写法的识别和样式覆盖能力，不要求老项目先改成 `wl-skills-kit` 最佳实践。扫描时先判断当前写法能否通过化妆层统一视觉；若用户希望进一步规范化业务代码，再提示可使用 `wl-skills-kit` 按团队模板重构为 `BaseTable render-type="agGrid" + cid + defineColumns/renderOps`。也就是说：`wl-skills-ui` 负责先统一样式，`wl-skills-kit` 负责可选的规范化生成/修复。
+
+## 全局样式来源
+
+`styles/vendors/_base-table.scss` — 已注入容器圆角、表头颜色、操作按钮间距；
+`runtime.defineColumns()` 优先接入平台原生 overflow tooltip；`runtime/auto` 为动态
+Picker 和历史普通文本列提供包级兜底。运行时只在 `scrollWidth > clientWidth` 时工作，
+并排除 Tag、操作列、编辑器、自定义 renderer、主动换行列和皮肤豁免区域。项目侧
+不要重复写样式或再注册第二套全局 Tooltip。
+
+## 未来源码迁移
+
+当 BaseTable 源码可用：
+1. 把 `_base-table.scss` 内容平迁到 `BaseTable.vue` 的 `<style scoped>`
+2. 在 `runtime/presets/` 新增 `base-table.ts` 提供原生 API
+3. 业务代码升级为 `<BaseTable :columns="defineColumns(...)" />`

@@ -6,7 +6,6 @@
   "localBackendUrl": "http://localhost:10010",
   "localPublicUrl": "http://localhost:8002",
   "nodeServerUrl": "http://127.0.0.1:2000",
-  "localBackendRoutes": [],
   "features": ["git-standards"],
   "environments": {
     "dev": {

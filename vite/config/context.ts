@@ -12,6 +12,12 @@ import { ENVIRONMENTS } from "./environments";
 type Source = "remote" | "local";
 export type DevMode = "remote" | "backend" | "public";
 
+/** 本地后端路由目标：prefix 为网关前缀（相对 baseApi） */
+export interface LocalApiTarget {
+  prefix: string;
+  target: string;
+}
+
 export interface RuntimeEnvironment {
   VUE_APP_BASE_API: string;
   VUE_APP_PREFIX: string;
@@ -37,7 +43,7 @@ export interface ViteContext {
   webUrl: string;
   webApi: string;
   apiServer: string;
-  localBackendUrl: string;
+  localApiTargets: LocalApiTarget[];
   localPublicUrl: string;
   anyReportServer: string;
   version: string;
@@ -73,6 +79,87 @@ function normalizeApiPrefix(prefix: string) {
 
 function removeTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
+}
+
+/**
+ * 解析 ENV_LOCAL_API 本地后端目标（仅 dev:local 模式使用）：
+ * - 空值：回退 project.config.json 的 localBackendUrl，整个模块接口走同一服务；
+ * - 裸 URL（不含 "="）：同上，等价 v1.2 的单服务形态；
+ * - 前缀路由：`pl=http://localhost:10301;pb=http://localhost:10205`，
+ *   按网关前缀把不同微服务路由到不同本地进程，前缀长者优先匹配。
+ */
+function parseLocalApiTargets(value: string | undefined): LocalApiTarget[] {
+  const fallback = () => [
+    {
+      prefix: APP_CONFIG.moduleName,
+      target: removeTrailingSlash(APP_CONFIG.defaultLocalBackendUrl)
+    }
+  ];
+  const raw = value?.trim();
+  if (!raw) return fallback();
+  if (!raw.includes("=")) {
+    return [
+      { prefix: APP_CONFIG.moduleName, target: removeTrailingSlash(raw) }
+    ];
+  }
+
+  const targets = raw
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const separatorIndex = item.indexOf("=");
+      if (separatorIndex <= 0 || separatorIndex === item.length - 1) {
+        throw new Error(
+          `[dev:local] Invalid ENV_LOCAL_API item "${item}". Expected: prefix=http://host:port`
+        );
+      }
+
+      const prefix = normalizeApiPrefix(item.slice(0, separatorIndex).trim());
+      const target = removeTrailingSlash(item.slice(separatorIndex + 1).trim());
+
+      if (!/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(prefix)) {
+        throw new Error(
+          `[dev:local] Invalid API prefix "${prefix}" in ENV_LOCAL_API.`
+        );
+      }
+
+      let targetUrl: URL;
+      try {
+        targetUrl = new URL(target);
+      } catch {
+        throw new Error(
+          `[dev:local] Invalid local API URL "${target}" in ENV_LOCAL_API.`
+        );
+      }
+      if (
+        !["http:", "https:"].includes(targetUrl.protocol) ||
+        targetUrl.username ||
+        targetUrl.password ||
+        targetUrl.search ||
+        targetUrl.hash
+      ) {
+        throw new Error(
+          `[dev:local] ENV_LOCAL_API only supports plain HTTP(S) URLs without credentials, query, or hash: "${target}".`
+        );
+      }
+
+      return { prefix, target };
+    });
+
+  const prefixes = new Set<string>();
+  for (const item of targets) {
+    if (prefixes.has(item.prefix)) {
+      throw new Error(
+        `[dev:local] Duplicate API prefix "${item.prefix}" in ENV_LOCAL_API.`
+      );
+    }
+    prefixes.add(item.prefix);
+  }
+
+  return targets.sort(
+    (left, right) => right.prefix.length - left.prefix.length
+  );
 }
 
 function formatVersion(now: Date) {
@@ -178,9 +265,9 @@ export function resolveViteContext(
     webUrl,
     webApi,
     apiServer,
-    localBackendUrl: removeTrailingSlash(
-      rawEnv["ENV_LOCAL_API"] || APP_CONFIG.defaultLocalBackendUrl
-    ),
+    localApiTargets: useLocalBackend
+      ? parseLocalApiTargets(rawEnv["ENV_LOCAL_API"])
+      : [],
     localPublicUrl: removeTrailingSlash(
       rawEnv["ENV_LOCAL_PUBLIC"] || APP_CONFIG.defaultLocalPublicUrl
     ),
