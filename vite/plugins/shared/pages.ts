@@ -19,6 +19,7 @@ const moduleStylePages: SharedPageItem[] = [
 const businessModule = gProd(APP_CONFIG.moduleName, {
   demo: [
     ["list", "Demo List"],
+    ["tree-list", "Demo Tree List"],
     ["detail", "Demo Detail"]
   ]
 });

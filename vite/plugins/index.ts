@@ -1,31 +1,27 @@
 import vue from "@vitejs/plugin-vue";
 import federation from "@originjs/vite-plugin-federation";
 import createAutoImport from "./auto-import";
-import vueJsx from "@vitejs/plugin-vue-jsx";
-import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
 import path from "path";
 import Components from "unplugin-vue-components/vite";
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
-import * as fs from "fs";
 import { PluginOption } from "./type";
-import topLevelAwait from "vite-plugin-top-level-await";
-import { getSharedComponents } from "./shared";
+import { getSharedComponents, getSharedPageItems } from "./shared";
 import fullImportPlugin from "./full-import";
-import CommonVitePlugin from "@jhlc/common-vite-plugin";
+import { createBuildArtifactsPlugin } from "./build-artifacts";
+import { createSvgIconsRegisterPlugin } from "./svg-icons-register";
 
 export default async function createVitePlugins(viteEnv, option: PluginOption) {
-  console.log("插件参数：", option);
+  const debugLog = (...args: unknown[]) => {
+    if (option.debug) console.log(...args);
+  };
+  debugLog("Plugin options:", option);
   const filename = `remoteEntry.js`;
   let pageNum = 0;
+  const sharedPageItems = getSharedPageItems(option.debug);
   const vitePlugins = [
-    vueJsx(),
     vue(),
-    createSvgIconsPlugin({
-      iconDirs: [path.resolve(process.cwd(), "src/assets/icons/svg")],
-      symbolId: "icon-[dir]-[name]",
-      svgoOptions: true
-    }),
-    createAutoImport(option),
+    createSvgIconsRegisterPlugin(),
+    createAutoImport(),
     Components({
       resolvers: [ElementPlusResolver()],
       dts: "src/components.d.ts",
@@ -35,70 +31,49 @@ export default async function createVitePlugins(viteEnv, option: PluginOption) {
       // 允许子目录作为组件的命名空间
       directoryAsNamespace: false
     }),
-    // 2026-09 退出 windicss：模板内无原子类消费方（示例页已改为普通
-    // class），safe-list 生成的数千类为死代码 CSS。等效 preflight 已迁至
-    // src/assets/style/main.scss 顶部。
-    {
-      name: "generate-version-file",
-      closeBundle() {
-        if (!option.isBuild) {
-          return;
-        }
-        const content = CommonVitePlugin.getMicroVersionContent(
-          option.version,
-          option.module,
+    // 2026-10 工具链升级（对齐 wl-ui-produce 08a83c3e）：version.js 与
+    // 简繁双产物改由本插件承担，退役 @jhlc/common-vite-plugin（其 Vite 4
+    // peer 锁与未声明的 opencc-js 依赖不再兼容 Vite 7）。
+    option.isBuild
+      ? createBuildArtifactsPlugin({
           filename,
-          String(pageNum)
-        );
-        try {
-          fs.mkdirSync(path.resolve(__dirname, "../../dist"));
-        } catch (e) {}
-        const outputPath = path.resolve(__dirname, "../../dist", "version.js");
-        fs.writeFileSync(outputPath, content);
-        console.log(
-          `------>Version file generated at ${outputPath}, content: ${content}`
-        );
-
-        CommonVitePlugin.convertCn2Tw(path.resolve(__dirname, "../../dist"));
-      }
-    }
+          getPageNum: () => pageNum,
+          moduleName: option.module,
+          outputDirectory: path.resolve(process.cwd(), "dist"),
+          version: option.version
+        })
+      : null
   ];
 
   const t = option.version;
-  const webUrl = option.isBuild || option.isPublicLocal ? "" : option.webUrl;
   const mainRemoteEntry =
     option.isPublicLocal && !option.isBuild
       ? `/sub/public/assets/${filename}?t=${t}`
       : `/assets/${filename}?t=${t}`;
   const remotes = {
     main: mainRemoteEntry,
-    systemApp: `${
-      option.isBuild ? "" : webUrl
-    }/sub/systemApp/assets/remoteEntry.js?t=${t}`,
-    agGridApp: `${
-      option.isBuild ? "" : webUrl
-    }/sub/ag-grid/assets/remoteEntry.js?t=${t}`
+    systemApp: `/sub/systemApp/assets/remoteEntry.js?t=${t}`,
+    agGridApp: `/sub/ag-grid/assets/remoteEntry.js?t=${t}`
   };
   // 主系统
-  console.log(option.webUrl);
+  debugLog(option.webUrl);
 
-  const exposes = getSharedComponents();
+  const exposes = getSharedComponents(sharedPageItems);
 
-  console.log("文件：" + filename, {
+  debugLog("Federation entry:", {
     module: option.module,
     filename
   });
 
   // 2026-09 放弃远端增量打包（federationIncreaseOption）：该机制依赖
-  // dist 历史堆积做 diff（emptyOutDir 必须为 false），产物会无限膨胀
-  // （生产项目实测 18,259 文件/599MB，其中 9,089 个繁体副本），且增量
-  // 接口不稳定时静默跳过反而造成"增量/全量"两种不可控行为。改为每次
-  // 全量构建，dist 清空重建。
+  // dist 历史堆积做 diff（emptyOutDir 必须为 false），产物无限膨胀（实测
+  // 18,259 文件/599MB，其中 9,089 个繁体副本），增量接口不稳定时静默跳过
+  // 反而造成"增量/全量"两种不可控行为。改为每次全量构建，dist 清空重建。
   pageNum = Object.keys(exposes).length;
   if (pageNum < 1) {
     throw new Error("当前无变更代码，无需打包..");
   }
-  console.log("最终打包：", pageNum, exposes);
+  debugLog("Federation exposes:", pageNum, exposes);
   if (option.isBuild) {
     vitePlugins.push(
       federation({
@@ -140,14 +115,9 @@ export default async function createVitePlugins(viteEnv, option: PluginOption) {
       })
     );
   }
-  vitePlugins.unshift(fullImportPlugin(option));
-  if (option.isBuild) {
-    vitePlugins.push(
-      topLevelAwait({
-        promiseExportName: "__tla",
-        promiseImportName: (i) => `__tla_${i}`
-      })
-    );
+  // 该插件只注入开发页面清单，正式构建不做任何工作。
+  if (!option.isBuild) {
+    vitePlugins.unshift(fullImportPlugin(option, sharedPageItems));
   }
 
   return vitePlugins;

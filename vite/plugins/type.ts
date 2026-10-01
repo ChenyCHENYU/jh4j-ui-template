@@ -1,5 +1,6 @@
 export interface PluginOption {
   isBuild: boolean;
+  debug: boolean;
   // Kept for compatibility with platform packages; equivalent to isPublicLocal.
   isLocal: boolean;
   isPublicLocal: boolean;

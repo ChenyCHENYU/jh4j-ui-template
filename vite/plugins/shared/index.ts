@@ -1,27 +1,27 @@
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
 import { list as pages } from "./pages";
 import { list as flowDetails } from "./flow-detail";
 import { list as messageDetails } from "./message-detail";
 import { getShared } from "./utils";
+import type { SharedPageItem } from "./utils";
 
-export const getSharedComponents = function () {
-  const ret: Record<string, string> = {
-    ...getShared(pages)
-  };
+const configuredPages = [...pages, ...flowDetails, ...messageDetails];
+const viewsDirectory = path.resolve(process.cwd(), "src/views");
 
-  // 过滤不存在的文件
-  for (const [key, page] of Object.entries(ret)) {
-    if (!fs.existsSync(page)) {
-      console.log("文件不存在" + page);
-      delete ret[key];
+export function getSharedPageItems(debug = false): SharedPageItem[] {
+  return configuredPages.filter((item) => {
+    const page = path.resolve(viewsDirectory, item.name);
+    const exists =
+      page.startsWith(`${viewsDirectory}${path.sep}`) && fs.existsSync(page);
+
+    if (!exists && debug) {
+      console.log("Missing exposed page:", page);
     }
-  }
+    return exists;
+  });
+}
 
-  // 审批详情
-  Object.assign(ret, getShared(flowDetails));
-
-  // 消息详情
-  Object.assign(ret, getShared(messageDetails));
-
-  return ret;
-};
+export function getSharedComponents(items: SharedPageItem[]) {
+  return getShared(items);
+}

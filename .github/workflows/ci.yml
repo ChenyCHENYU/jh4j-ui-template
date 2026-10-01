@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, sit, uat, pre, prd]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      # 内网源不可达时此步会失败；公网 CI 请按需替换 .npmrc 或使用
+      # 内部 Runner。--frozen-lockfile 保证与提交的锁文件一致。
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Quality gate (typecheck + lint + format)
+        run: pnpm check
+
+      # UI 规范接入完整性（I001-I005 五项全绿）
+      - name: wl-skills-ui integration check
+        run: pnpm exec wl-ui check --project .
+
+      - name: Template contract self-check
+        run: pnpm template:validate
+
+      # 构建冒烟：不部署，仅验证联邦产物可生成（含身份卡/简繁副本）
+      - name: Build smoke (dev)
+        run: pnpm build:dev

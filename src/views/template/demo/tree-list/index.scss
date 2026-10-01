@@ -1,0 +1,16 @@
+// 左树右表局部样式：tree-list 骨架的间距补充。
+// 视觉基线（间距/圆角/配色）已由 wl-skills-ui styles 全局提供。
+
+.demo-tree-list {
+  .tree-list__aside {
+    background: var(--el-bg-color);
+    border-radius: var(--el-border-radius-base);
+    padding: 8px;
+  }
+
+  .tree-list__main {
+    background: var(--el-bg-color);
+    border-radius: var(--el-border-radius-base);
+    padding: 8px;
+  }
+}

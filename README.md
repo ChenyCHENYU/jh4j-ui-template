@@ -82,7 +82,11 @@ pnpm install && pnpm dev
 
 ## 3. 写第一个业务页面
 
-> **照抄示例页就是合规写法**。示例页 `src/views/<module>/demo/` 是完整可运行参考：本地数据 CRUD，无需后端即可跑通列表、查询、弹窗表单、详情抽屉。
+> **照抄示例页就是合规写法**。示例页 `src/views/<module>/demo/` 是完整可运行参考（本地数据，无需后端）：
+>
+> - `demo/list`——标准列表页（查询 + 工具栏 + BaseTable/AG Grid + 三态弹窗 + 详情抽屉）
+> - `demo/tree-list`——左树右表（C_Tree + 拖拽分割条 + 点击节点过滤右表）
+> - `demo/detail`——只读详情页（el-descriptions 骨架）
 
 ### 3.1 三文件分离（页面标准结构）
 
@@ -129,18 +133,25 @@ export function getOrderPageApi(params: any) {
 
 页面注册后需平台管理员在系统管理中为页面路径配置菜单项，之后菜单可见。
 
-### 3.5 内置组件样板（直接用，自动注册）
+### 3.5 示例页何时删、怎么删
 
-| 组件              | 位置                     | 用途                                                                                                 |
+示例页保留到项目上线前均可（零成本，且是新页面的活参考）。正式上线时移除：
+
+1. 删除 `src/views/<module>/demo/` 目录（list / tree-list / detail）
+2. 清理 `vite/plugins/shared/pages.ts` 中 demo 条目（保留 module style 条目）
+3. 全局搜索 `demo` 确认无残留引用（类型可继续复用 `src/types/page.ts`）
+
+### 3.6 内置组件样板（直接用，自动注册）| 组件 | 位置 | 用途 |
+
 | ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `C_ParentView`    | `src/components/global/` | 路由父级占位（`<router-view />`）                                                                    |
-| `C_TagStatus`     | `src/components/global/` | 配置驱动状态标签；业务字典经 `registerStatusConfig("yourKey", [...])` 注册，内置 boolean/enable 字典 |
-| `C_Tree`          | `src/components/global/` | 通用树（Tab 切换 + 关键词过滤 + 插槽）                                                               |
-| `C_ReportPreview` | `src/components/global/` | 打印报表平台远程预览（联邦加载）                                                                     |
-| `c_formModal`     | `src/components/local/`  | 三态表单弹窗（add/edit/view + 列表选择器回填 + 测试填充）                                            |
-| `c_listModal`     | `src/components/local/`  | 单选列表选择弹窗                                                                                     |
-| `c_formSections`  | `src/components/local/`  | 折叠区块表单（长表单分区）                                                                           |
-| `c_spliterTitle`  | `src/components/local/`  | 分区标题条                                                                                           |
+| `C_ParentView` | `src/components/global/` | 路由父级占位（`<router-view />`） |
+| `C_TagStatus` | `src/components/global/` | 配置驱动状态标签；业务字典经 `registerStatusConfig("yourKey", [...])` 注册，内置 boolean/enable 字典 |
+| `C_Tree` | `src/components/global/` | 通用树（Tab 切换 + 关键词过滤 + 插槽） |
+| `C_ReportPreview` | `src/components/global/` | 打印报表平台远程预览（联邦加载） |
+| `c_formModal` | `src/components/local/` | 三态表单弹窗（add/edit/view + 列表选择器回填 + 测试填充） |
+| `c_listModal` | `src/components/local/` | 单选列表选择弹窗 |
+| `c_formSections` | `src/components/local/` | 折叠区块表单（长表单分区） |
+| `c_spliterTitle` | `src/components/local/` | 分区标题条 |
 
 AI 编码规范（AGENTS.md 等 9 编辑器规则）已内置，AI 助手会自动遵循模板规范写页面。
 
@@ -336,6 +347,9 @@ jh4j-ui-template/
 | Base 组件从哪来              | public 的 plugins 运行时全局注册，直接用（见示例页）                      |
 | 为什么没有 WindiCSS          | v1.2.0 已移除（零消费方 + 数千死类），preflight 等效迁移至 `main.scss`    |
 
-### 6.9 更新记录
+### 6.9 更新记录与模板回流
 
-见 [docs/changelog.md](docs/changelog.md)：版本特性、破坏性变更与升级路线（E2E 基建、wl-skills-kit 特性化等）。升级基线标记：`git tag v1.3.0`（Vue 3.2 / Vite 4 末版）。
+- 版本特性与破坏性变更：[docs/changelog.md](docs/changelog.md)
+- **衍生项目如何吸收模板升级**：[docs/upgrade-guide.md](docs/upgrade-guide.md)（建议创建项目时保留模板远程）
+- CI 集成样例：[docs/ci-jenkins.md](docs/ci-jenkins.md) 与 `.github/workflows/ci.yml`
+- 升级基线标记：`git tag v1.3.0`（Vue 3.2 / Vite 4 末版）

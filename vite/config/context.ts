@@ -177,7 +177,12 @@ export function resolveViteContext(
   root = process.cwd(),
   now = new Date()
 ): ViteContext {
-  const requestedTarget = readCliValue("target", argv) || configEnv.mode;
+  // 目标环境解析优先级：--target CLI 参数 > DEV_SERVER_ENV 环境变量
+  // （与 wl-ui-produce 对齐，团队可在不改脚本的情况下统一切环境）> mode。
+  const requestedTarget =
+    readCliValue("target", argv) ||
+    process.env.DEV_SERVER_ENV ||
+    configEnv.mode;
   if (!isAppEnv(requestedTarget)) {
     throw new Error(
       `[env] Unsupported target "${requestedTarget}". Use: ${APP_ENVS.join(", ")}`
@@ -218,10 +223,13 @@ export function resolveViteContext(
     : useLocalBackend
       ? "backend"
       : "remote";
-  const version = formatVersion(now);
+  // 每次进程级时间戳会让 Vite 依赖缓存在每次 dev 重启后失效；构建保留
+  // 发布时间戳，dev 使用稳定缓存标签（对齐 wl-ui-produce 08a83c3e）。
+  const version = isBuild ? formatVersion(now) : "dev";
 
   const pluginOption: PluginOption = {
     isBuild,
+    debug: argv.includes("--debug"),
     // 兼容平台公共包：历史 isLocal 字段现在仅表示 public 是否在本地。
     isLocal: isPublicLocal,
     isPublicLocal,
@@ -273,7 +281,7 @@ export function resolveViteContext(
     ),
     anyReportServer: rawEnv["ENV_ANY_REPORT_SERVER"],
     version,
-    buildTimestamp: now.getTime(),
+    buildTimestamp: isBuild ? now.getTime() : 0,
     rawEnv,
     pluginOption,
     runtimeEnv

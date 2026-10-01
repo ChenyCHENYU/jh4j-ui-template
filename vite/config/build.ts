@@ -13,6 +13,11 @@ export function createBuildConfig(context: ViteContext): BuildOptions {
     minify: "esbuild",
     reportCompressedSize: false,
     cssCodeSplit: false,
+    // Federation 产物统一使用原生 ES2022；现代浏览器原生支持 top-level
+    // await，无需 vite-plugin-top-level-await 转换及其 @swc/core 依赖。
+    target: "es2022",
+    // ES2022 浏览器原生支持 modulepreload，避免注入 Vite 的 legacy shim。
+    modulePreload: { polyfill: false },
     rollupOptions: {
       input: {
         main: path.resolve(context.root, "index.html")

@@ -69,12 +69,17 @@ export function createBaseConfig(context: ViteContext): UserConfig {
     },
     base: context.isBuild ? `/sub/${APP_CONFIG.moduleName}/` : "/",
     css: {
+      // 复用少量常驻 Sass 编译器。默认按逻辑 CPU 各建一个 worker，对本
+      // 项目反复导入的 scoped 样式会重复编译器启动/缓存开销。
+      preprocessorMaxWorkers: 1,
       postcss: {
         plugins: []
       }
     },
     resolve: {
       extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json", ".vue"],
+      // 开发预打包与远程模块必须复用宿主实例，避免 Pinia/Vue 上下文分裂。
+      dedupe: ["pinia", "vue", "vue-router", "element-plus"],
       alias: [
         {
           find: "@",
@@ -84,7 +89,9 @@ export function createBaseConfig(context: ViteContext): UserConfig {
     },
     optimizeDeps: {
       exclude: ["@jhlc/utils", "@jhlc/types", "pinia", "vue-router"],
-      include: OPTIMIZED_DEPENDENCIES
+      include: OPTIMIZED_DEPENDENCIES,
+      // 让浏览器与依赖优化器并行工作，而不是阻塞一次全应用爬取。
+      holdUntilCrawlEnd: false
     },
     esbuild: {
       target: "es2022"
