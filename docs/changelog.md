@@ -1,5 +1,39 @@
 # 更新记录
 
+## v1.4.0（2026-10-01）
+
+工具链大版本升级，对齐 wl-ui-produce `08a83c3e`（build(steelmaking): align Vue 3.5 and Vite 7 toolchain）。**升级基线标记：`git tag v1.3.0`（Vue 3.2 / Vite 4 末版）**。
+
+### 破坏性变更
+
+- **Vue ~3.2.25 → 3.5.40**（+ @vue/compiler-sfc 同版）；**Vite 4.4.9 → 7.3.6**（@vitejs/plugin-vue → 6.0.8、unplugin-auto-import → 20.3.0、unplugin-vue-components → 29.2.0）
+- **联邦插件从 jh 定制 fork（1.4.1-jh.3）切换到上游 `@originjs/vite-plugin-federation@1.4.1`**；`@jhlc/common-vite-plugin` 退役
+- **移除 `vite-plugin-top-level-await`**（ES2022 原生支持 TLA，`build.target: "es2022"` + `modulePreload.polyfill: false`，@swc/core 构建白名单同步移除）
+- **移除 `vite-plugin-svg-icons`**（停在 2023 年未适配 Vite 7）：新增自研 `vite/plugins/svg-icons-register.ts` 保留 `virtual:svg-icons-register` 契约与 `icon-[dir]-[name]` symbolId 规则，真实读取 `src/assets/icons/svg` 生成雪碧图（produce 无图标用空存根，模板按有图标实现）
+- **移除 `@vitejs/plugin-vue-jsx`**（全库零 jsx/tsx 消费）
+
+### 新增/替代
+
+- `vite/plugins/build-artifacts.ts`（自 produce 移植）：承担原 common-vite-plugin 的 version.js 协议产物 + 简繁双产物（opencc-js，仅构建时加载字典；业务 chunk 转换、框架 chunk 引用改写的边界保持一致）
+- `vite/plugins/full-import.ts` 重写：退役 esbuild+vm 沙箱方案，改由 Vite 7 config 加载链原生编译 TS 页面清单，transform 注入 pages-dev
+- `scripts/enforce-pnpm.mjs` 替代 `npx only-allow pnpm`
+- `vendor/xlsx-0.20.3.tgz` 本地冻结依赖（SHA-256 与 produce 记录一致：8DC73FC3…BB99FE8），解决 SheetJS 官方 CDN 地址在私服不可达问题
+- pnpm-workspace 覆盖安全回溯线（nanoid/lodash/js-cookie/@babel/core）并与 public/produce 三方一致
+
+### 性能（对齐 produce 已验证参数）
+
+- `css.preprocessorMaxWorkers: 1`（复用常驻 Sass 编译器）
+- `resolve.dedupe: [pinia, vue, vue-router, element-plus]`（防宿主实例分裂）
+- `optimizeDeps.holdUntilCrawlEnd: false`（浏览器与优化器并行）
+- dev 版本标签固定为 `"dev"`（避免每进程时间戳击穿 Vite 依赖缓存），构建仍用发布时间戳
+
+### 版本与契约
+
+- engines：node `^20.19.0 || >=22.12.0`（Vite 7 要求，与 produce 一致；.nvmrc 保持 24）
+- **wl-skills-ui `1.11.1` → `^1.13.0`**（1.13 兼容承诺：未声明 profile 走宽松口径，升级零行为变化）
+- axios 0.27.2 → 0.33.0；@types/node 22.20.1
+- 保留：env.json 运行时接管、身份卡、ENV_LOCAL_API 前缀路由、token 时序等 v1.3.0 全部能力
+
 ## v1.3.0（2026-09-30）
 
 ### 环境管控：env.json 运行时接管（子应用集成）

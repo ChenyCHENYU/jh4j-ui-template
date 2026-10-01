@@ -1,568 +1,341 @@
 # jh4j-ui-template
 
 > **JH4J Cloud 基于 Vue 3 + Vite + Module Federation 的 PC 业务子系统标准模板。**
-> 模板既支持由 `@agile-team/jh4j-cloud-cli` 拉取并非交互初始化，也支持直接 `git clone` 后运行内置初始化命令；两种方式使用同一份配置契约。
+> 支持两种创建路径：内部脚手架 `@agile-team/jh4j-cloud-cli` 拉取并非交互初始化，或直接 `git clone` 后运行内置 `pnpm setup`；两种方式使用同一份配置契约。
 
 ---
 
-## 目录导航
+## 按任务快速导航
 
-- [快速开始](#快速开始)
-- [基于模板创建新业务系统](#基于模板创建新业务系统)
-- [开发模式说明](#开发模式说明)
-- [项目目录结构](#项目目录结构)
-- [技术栈](#技术栈)
-- [Module Federation 架构](#module-federation-架构)
-- [代码组织规范](#代码组织规范)
-- [UI 规范（wl-skills-ui）](#ui-规范wl-skills-ui)
-- [质量保障](#质量保障)
-- [常用开发模式](#常用开发模式)
-- [环境配置](#环境配置)
-- [版本对齐](#版本对齐)
-- [常见问题](#常见问题)
-- [更新记录](#更新记录)
+| 你想做什么                                 | 直接看                        |
+| ------------------------------------------ | ----------------------------- |
+| 3 分钟把模板跑起来（先跑通再说）           | [§1](#1-三分钟跑起来)         |
+| 基于模板创建我的实际项目（正式流程）       | [§2](#2-基于模板创建实际项目) |
+| 写第一个业务页面（照抄即合规）             | [§3](#3-写第一个业务页面)     |
+| 日常开发：联调后端 / 用平台能力 / 质量检查 | [§4](#4-日常开发)             |
+| 构建与发布                                 | [§5](#5-构建与发布)           |
+| 深入了解：架构 / 规范 / 环境体系           | [§6](#6-参考手册)             |
 
 ---
 
-## 快速开始
+## 1. 三分钟跑起来
 
-运行环境：Node.js 24（推荐），兼容 Node.js 22 LTS；包管理器固定为 pnpm 11.8+。
-
-### 1. 初始化项目
-
-直接 clone 模板时，先运行零依赖初始化脚本。每个问题都带有安全的 JH4J 默认值，直接回车即可确认：
+**环境要求**：Node.js 22.12+（推荐 24，见 `.nvmrc`）；包管理器固定 pnpm 11.8+；能访问内部 npm 源 `npm.walsin.com.cn`。
 
 ```bash
-pnpm setup
+git clone <template-repository> my-app   # 或直接下载
+cd my-app
+pnpm setup        # 零依赖初始化：项目名/模块名/标题/端口/五套环境，全部有安全默认值，回车即可
+pnpm install      # 内网源安装；postinstall 自动修补 common-core 类型声明
+pnpm dev          # 连接远程 public 启动，自动打开 http://localhost:8001/
 ```
 
-脚手架或 CI 可使用非交互模式：
+启动后登录即可看到平台界面与示例页面（示例订单列表 / 订单详情）。
 
-```bash
-pnpm setup -- --yes --config ./project-input.json --created-by @agile-team/jh4j-cloud-cli@0.3.0
-```
+**首次失败速查**：
 
-默认启用完整的 `@robot-admin/git-standards`，包含 Commitizen、Commitlint、Husky、ESLint、Prettier 和 lint-staged。直接 clone 时如明确不需要，可执行：
-
-```bash
-pnpm setup -- --yes --no-standards
-```
-
-禁用该能力会同时移除对应配置、开发依赖和模板 lockfile；随后执行 `pnpm install` 会按精简后的 `package.json` 生成新的 lockfile。
-
-初始化只修改结构化配置、项目名称、业务目录和 `.jhlc/project.json`，不会修改业务代码。
-
-### 2. 安装依赖
-
-```bash
-pnpm install
-```
-
-> 首次安装前请确认 `.npmrc` 中的内部 npm 源可访问（默认 `npm.walsin.com.cn`，`@jhlc` / `@agile-team` scope 同源）。模板包含 `element-plus` 企业定制版本等非 scope 包，不能只把 scope 指向内部源。安装完成后 `postinstall` 会自动修补 `@jhlc/common-core` 的类型声明。
-
-### 3. 启动开发服务器
-
-```bash
-# 连接远程 public（日常开发，默认）
-pnpm dev
-```
-
-启动成功后浏览器自动打开 `http://localhost:8001/`，登录后即可看到平台界面。
-
-### 4. 构建打包
-
-```bash
-pnpm build          # dev 环境构建
-pnpm build:uat      # uat 环境构建
-```
+| 症状                                | 处置                                                                                                |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------- |
+| install 报 ENOTFOUND / fetch failed | 内网源不可达：确认 VPN/内网，`.npmrc` 指向 `npm.walsin.com.cn`（`@jhlc`、`@agile-team` scope 同源） |
+| 白屏 / remoteEntry 404              | 目标环境远程服务不可达：核对 `project.config.json` 中该环境 `webUrl`                                |
+| 端口占用                            | 修改 `project.config.json` 的 `devServerPort` 后重启                                                |
 
 ---
 
-## 基于模板创建新业务系统
+## 2. 基于模板创建实际项目
 
-> 不建议复制目录后逐文件查找替换。直接 clone 时运行 `pnpm setup`；通过 JH4J Cloud CLI 创建时，会读取 `template.manifest.json` 并调用同一初始化入口。
+> 不要复制目录后逐文件查找替换——用 `pnpm setup`，它只改结构化配置、项目名、业务目录和 `.jhlc/project.json` 元数据，不动业务代码。
 
-### 方式一：直接 clone
-
-```bash
-git clone <jh4j-ui-template-repository> my-project
-cd my-project
-pnpm setup
-pnpm install
-pnpm dev
-```
-
-### 方式二：内部脚手架
+### 2.1 两种创建方式
 
 ```bash
+# 方式一：内部脚手架（推荐，读取 template.manifest.json 走同一初始化入口）
 jh4j create my-project
 jh4j create my-project --template web.jh4j-mf-remote
 jh4j create my-project --yes --no-standards
+
+# 方式二：直接 clone
+git clone <template-repository> my-project
+cd my-project
+pnpm setup                              # 交互式；CI 用 --yes --config ./project-input.json
+pnpm install && pnpm dev
 ```
 
-项目级配置统一保存在 `project.config.json`：
+`pnpm setup` 关键参数：`--project-name`（npm 包名）、`--module`（平台模块标识 = 部署目录 = Federation 前缀，决定 `src/views/<module>/`）、`--title`、`--port`、`--{env}-url/--{env}-api-prefix`（五套环境逐项确认）、`--no-standards`（拆除 git 规范全家桶）、`--config <json>`（非交互全量输入）。
 
-| 配置            | 用途                                         |
-| --------------- | -------------------------------------------- |
-| `projectName`   | npm 项目名称                                 |
-| `moduleName`    | 平台模块标识、部署目录及 Federation 页面前缀 |
-| `title`         | 浏览器标题和平台运行时标题                   |
-| `devServerPort` | 本地开发端口                                 |
-| `environments`  | DEV/SIT/UAT/PRE/PRD 地址与 API 前缀          |
-| `features`      | 脚手架选中的标准化能力 ID                    |
+### 2.2 项目唯一配置入口：project.config.json
 
-生成来源和模板版本保存在 `.jhlc/project.json`，业务开发者不应手动修改模板来源字段。
+| 配置                                   | 用途                                   | 何时改                   |
+| -------------------------------------- | -------------------------------------- | ------------------------ |
+| `projectName` / `moduleName` / `title` | 包名 / 平台模块标识 / 标题             | setup 时定，之后基本不动 |
+| `devServerPort`                        | 本地端口                               | 冲突时                   |
+| `environments{dev,sit,uat,pre,prd}`    | 每套环境 `webUrl` + `apiPrefix`        | 后端地址变化时           |
+| `features`                             | 启用的标准化能力（如 `git-standards`） | 需要增减能力时           |
 
-### 创建业务页面
+模板来源与版本存于 `.jhlc/project.json`（生成物，勿手改）。本机临时覆盖（不改此文件）用 `.env.local`，键位见 `.env.local.example`。
 
-```bash
-src/views/xxx/
-├── list/
-│   ├── index.vue       # 视图层
-│   ├── data.ts         # 数据逻辑层
-│   └── index.scss      # 样式层
-├── form/
-└── detail/
+### 2.3 git 规范能力（默认开启）
+
+默认启用 `@robot-admin/git-standards`：Commitizen（`pnpm cz`）、Commitlint、Husky（pre-commit lint-staged / pre-push typecheck）、ESLint、Prettier。不需要可 `pnpm setup -- --no-standards` 整体拆除（check 降级为仅 typecheck）。
+
+---
+
+## 3. 写第一个业务页面
+
+> **照抄示例页就是合规写法**。示例页 `src/views/<module>/demo/` 是完整可运行参考：本地数据 CRUD，无需后端即可跑通列表、查询、弹窗表单、详情抽屉。
+
+### 3.1 三文件分离（页面标准结构）
+
+```
+src/views/<module>/order/list/
+├── index.vue     # 视图层：模板 + 组件引用，不含业务逻辑
+├── data.ts       # 数据层：列定义(defineColumns) + 状态 + 事件处理
+└── index.scss    # 样式层：scoped SCSS（骨架样式已由 wl-skills-ui 提供）
 ```
 
-### 注册页面暴露
+从 `demo/list` 复制三文件开始改。核心规范在示例页中都有活样例：
 
-在 `vite/plugins/shared/pages.ts` 中注册页面路径：
+- 列定义用 `defineColumns([...])` 包裹；状态列 `renderTagNode(v, MAP)`；操作列 `renderOps([...])`
+- 骨架类名：`.list-page__query/__toolbar/__title/__table/__pagination`（详情页 `.detail-page`）
+- 平台组件 `BaseQuery / BaseToolbar / BaseTable / jh-pagination` 无需 import（public 运行时全局注册）
+- 页面级 API 契约格式见 `demo/list/api.md`
+
+### 3.2 注册页面暴露（关键，漏了菜单配了也看不到）
 
 ```ts
-import type { SharedPageItem } from "./utils";
-
+// vite/plugins/shared/pages.ts
 export const list: SharedPageItem[] = [
-  { name: "xxx/style/index.vue", label: "module style" },
-  { name: "xxx/list/index.vue", label: "List" },
-  { name: "xxx/form/index.vue", label: "Form" }
+  { name: "<module>/style/index.vue", label: "module style" },
+  { name: "<module>/order/list/index.vue", label: "订单列表" }
 ];
 ```
 
-### 创建 API 接口
+### 3.3 写 API
 
 ```ts
-// src/api/xxx.ts
+// src/api/order.ts
 import request from "@jhlc/common-core/src/util/request";
 
-export function getListApi(params: any) {
-  return request({ url: "/xxx/list", method: "get", params });
+export function getOrderPageApi(params: any) {
+  return request({
+    url: "/<module>/order/queryPage",
+    method: "post",
+    data: params
+  });
 }
 ```
 
-### 启动验证
+### 3.4 菜单配置
+
+页面注册后需平台管理员在系统管理中为页面路径配置菜单项，之后菜单可见。
+
+### 3.5 内置组件样板（直接用，自动注册）
+
+| 组件              | 位置                     | 用途                                                                                                 |
+| ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `C_ParentView`    | `src/components/global/` | 路由父级占位（`<router-view />`）                                                                    |
+| `C_TagStatus`     | `src/components/global/` | 配置驱动状态标签；业务字典经 `registerStatusConfig("yourKey", [...])` 注册，内置 boolean/enable 字典 |
+| `C_Tree`          | `src/components/global/` | 通用树（Tab 切换 + 关键词过滤 + 插槽）                                                               |
+| `C_ReportPreview` | `src/components/global/` | 打印报表平台远程预览（联邦加载）                                                                     |
+| `c_formModal`     | `src/components/local/`  | 三态表单弹窗（add/edit/view + 列表选择器回填 + 测试填充）                                            |
+| `c_listModal`     | `src/components/local/`  | 单选列表选择弹窗                                                                                     |
+| `c_formSections`  | `src/components/local/`  | 折叠区块表单（长表单分区）                                                                           |
+| `c_spliterTitle`  | `src/components/local/`  | 分区标题条                                                                                           |
+
+AI 编码规范（AGENTS.md 等 9 编辑器规则）已内置，AI 助手会自动遵循模板规范写页面。
+
+---
+
+## 4. 日常开发
+
+### 4.1 三种开发模式（互斥，按需选一）
+
+| 场景             | 命令              | 模块接口 | public     |
+| ---------------- | ----------------- | -------- | ---------- |
+| 日常开发（默认） | `pnpm dev`        | 远程     | 远程       |
+| 联调本地后端     | `pnpm dev:local`  | 本地后端 | 远程       |
+| 联调本地 public  | `pnpm dev:public` | 远程     | 本地 :8002 |
+
+本地后端多服务分流：`.env.local` 写 `ENV_LOCAL_API=pl=http://localhost:10301;pb=http://localhost:10205`（按网关前缀路由，裸 URL = 单服务全接管）。dev 临时切环境：`pnpm dev -- --target=sit`。完整说明 `docs/local-development.md`。
+
+本地 public 联调前置：
 
 ```bash
-pnpm dev
-# 浏览器访问 http://localhost:8001/，登录后在菜单中找到对应页面
+# 终端1：编译 public（或 dev --watch）
+cd <platform-public> && pnpm build:sit
+# 终端2：托管产物
+cd <platform-public> && pnpm serve:local
+# 终端3：业务项目
+pnpm dev:public
 ```
+
+### 4.2 平台常用能力
+
+```ts
+// API：request / getAction / postAction
+import request, { getAction, postAction } from "@jhlc/common-core/src/util/request";
+
+// 权限（模板中直接用）
+<el-button v-if="$auth.hasPermi('xxx:order:add')">新增</el-button>
+
+// 页签
+proxy.$tab.closePage();   // 关闭当前页签
+proxy.$tab.refreshPage(); // 刷新
+
+// Store（federation 共享实例）
+import useUserStore from "@jhlc/common-core/src/store/user";
+```
+
+### 4.3 质量检查
+
+| 命令                          | 说明                                                      |
+| ----------------------------- | --------------------------------------------------------- |
+| `pnpm check`                  | typecheck + lint + format:check 一键全检（CI 用）         |
+| `pnpm typecheck`              | pre-push 自动执行；装 wl-skills-kit 后升级为 kit validate |
+| `pnpm lint` / `pnpm lint:fix` | ESLint                                                    |
+| `npx wl-ui check --project .` | UI 规范接入五项检查                                       |
+| `pnpm template:validate`      | 模板契约自检（模板维护用）                                |
+
+> typecheck 口径：平台包以 TS 源码发包，`node_modules` 内平台错误豁免、仅本仓库 `src/`、`vite/` 卡门（详见 §6.6）。
 
 ---
 
-## 开发模式说明
-
-本项目提供三种职责互斥的开发模式：
-
-| 场景            | 命令              | 当前模块接口      | public           |
-| --------------- | ----------------- | ----------------- | ---------------- |
-| 连接远程环境    | `pnpm dev`        | 远程              | 远程             |
-| 联调本地后端    | `pnpm dev:local`  | `localhost:10010` | 远程             |
-| 联调本地 public | `pnpm dev:public` | 远程              | `localhost:8002` |
-
-本地后端支持按网关前缀路由多个服务（`.env.local` 中 `ENV_LOCAL_API=pl=http://localhost:10301;pb=http://localhost:10205`，裸 URL 等价单服务全接管）。五套环境地址统一维护在 `project.config.json`，本机临时覆盖使用不提交的 `.env.local`（键位见 `.env.local.example`）。完整命令和代理说明见 `docs/local-development.md`。
-
-#### 本地联调前置步骤
+## 5. 构建与发布
 
 ```bash
-# 终端1：编译 public（首次或 public 有更新时）
-cd <platform-public-project> && pnpm build:sit
-
-# 终端2：托管 public 构建产物到 :8002
-cd <platform-public-project> && pnpm serve:local
-
-# 终端3：启动业务项目
-cd <business-project> && pnpm dev:public
+pnpm build:dev   # 其余：build:sit / build:uat / build:pre / build:prd
 ```
 
-> 如需实时监听 public 改动，终端1 改用 `pnpm dev:local`（build --watch）。
+- 产物全量清空重建（已退役联邦增量打包——历史曾膨胀 599MB）
+- **身份卡**：每次构建生成 `dist/env.json`（commit/分支/流水线/时间/脏标记），部署后访问 `/sub/{module}/env.json` 核对部署身份；纯展示，运行时零读取
+- **简繁双产物**：业务 chunk 自动转换 + `-tw` 副本；`version.js` 协议产物随构建生成
+- **环境管控**：生产运行时以 wl-ui-public 部署的 `/sub/public/env.json` 为准（`src/util/public-env.ts` 预载 + define 深合并），错误 mode 打包也会被运行时拉正；门禁卡控由 public 中心化承担
+- Jenkins 安装建议 `pnpm install --frozen-lockfile --prefer-offline`（勿用 `--force`）；`vendor/xlsx-0.20.3.tgz` 为本地冻结依赖，须随仓库检出
 
 ---
 
-## 项目目录结构
+## 6. 参考手册
 
-```
-jh4j-ui-template/
-├── project.config.json      # 项目唯一可变配置入口
-├── template.manifest.json   # 模板标识、版本、运行时和参数契约
-├── pnpm-workspace.yaml      # pnpm 11 安装策略与依赖构建白名单
-├── .jhlc/project.json       # 初始化后生成的项目来源元数据
-├── public/                  # 静态资源
-├── scripts/
-│   └── setup-project.mjs    # clone 与脚手架共用的初始化入口
-├── src/
-│   ├── api/                 # 业务接口定义
-│   ├── assets/              # 静态资源（样式、图片）
-│   │   └── style/           # SCSS 样式
-│   ├── components/          # 业务公共组件
-│   ├── composables/         # 组合式函数（Hooks）
-│   ├── types/               # TypeScript 类型定义
-│   │   └── jh4j-cloud.ts    # 平台配置（systemModules 等）
-│   ├── util/                # 工具函数
-│   │   ├── system.ts        # Module Federation 远程组件加载器
-│   │   ├── pages-dev.ts     # 开发环境本地页面优先加载
-│   │   └── jh4j.ts          # 运行时环境读取
-│   ├── views/               # 业务页面
-│   │   └── template/demo/   # 示例页面（可删除）
-│   ├── App.vue              # 根组件
-│   ├── main.ts              # 入口文件
-│   ├── main-core.ts         # 核心初始化（Pinia、Router、i18n、Platform）
-│   └── env.d.ts             # 全局类型声明（Federation 远程模块等）
-├── vite/
-│   ├── config/              # 分层 Vite 工程配置
-│   │   ├── app.ts           # 读取 project.config.json
-│   │   ├── environments.ts  # 读取五套环境配置
-│   │   ├── context.ts       # 模式解析与运行时配置
-│   │   ├── server.ts        # 开发服务器与代理
-│   │   ├── plugins.ts       # 插件组合
-│   │   ├── base.ts          # 通用 Vite 配置
-│   │   └── build.ts         # 构建配置
-│   ├── plugins/             # Vite 插件配置
-│   │   ├── index.ts         # 插件聚合（federation、SVG 等）
-│   │   ├── gen-env-json.ts  # 构建产物 env.json 身份卡生成
-│   │   ├── shared/          # Federation exposes 配置
-│   │   │   ├── components.ts # 暴露的公共组件
-│   │   │   └── pages.ts     # 暴露的业务页面
-│   │   └── type.ts          # PluginOption 类型定义
-├── tsconfig.json            # TypeScript 配置
-├── .env                     # 各环境共用配置
-├── .env.local.example       # 本机覆盖配置样例（复制为 .env.local）
-└── package.json
-```
+### 6.1 技术栈与版本对齐
 
----
+> **版本对齐是硬约束**：下表必须与目标平台 public 工程一致，否则 federation 共享失败。
 
-## 技术栈
+| 包                               | 版本          | 说明                                     |
+| -------------------------------- | ------------- | ---------------------------------------- |
+| vue                              | 3.5.40        | 核心框架（federation shared）            |
+| vite                             | 7.3.6         | 构建工具（2026-10 升级）                 |
+| pinia                            | ~2.0.14       | 状态管理（federation shared）            |
+| vue-router                       | 4.4.3         | 路由（federation shared）                |
+| element-plus                     | 2.2.6-prod.3  | UI 组件（企业定制版，federation shared） |
+| @jhlc/common-core                | 3.1.0-prod.14 | 平台共享包（federation shared）          |
+| @originjs/vite-plugin-federation | 1.4.1（上游） | 微前端插件（jh fork 已退役）             |
+| @agile-team/wl-skills-ui         | ^1.13.0       | UI 统一规范                              |
+| typescript                       | ^5.4.0        | 类型检查                                 |
 
-| 分类     | 技术                             | 版本           | 说明                               |
-| -------- | -------------------------------- | -------------- | ---------------------------------- |
-| 框架     | Vue 3                            | ~3.2.25        | Composition API + `<script setup>` |
-| 构建     | Vite                             | 4.4.9          | 开发 HMR + 构建                    |
-| 微前端   | @originjs/vite-plugin-federation | 1.4.1-jh.3     | Module Federation                  |
-| 状态管理 | Pinia                            | ~2.0.14        | 通过 federation 共享远程实例       |
-| 路由     | Vue Router                       | 4.4.3          | 通过 federation 共享远程实例       |
-| UI 组件  | Element Plus                     | 2.2.6-prod.3   | 企业级 UI                          |
-| UI 规范  | @agile-team/wl-skills-ui         | 1.11.1（钉死） | 设计令牌/组件皮肤/列渲染运行时     |
-| 国际化   | Vue I18n                         | 9.13.1         | 通过 federation 共享远程实例       |
-| 公共包   | @jhlc/common-core                | 3.1.0-prod.14  | 平台共享 Store/API/类型            |
-| 语言     | TypeScript                       | ^5.4.0         | 类型安全                           |
+engines：node `^20.19.0 || >=22.12.0`。
 
----
-
-## Module Federation 架构
+### 6.2 Module Federation 架构
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │                    浏览器 :8001                        │
-│  jh4j-ui-template（Host / 业务子应用）                  │
+│  业务子应用（Host）                                    │
 │                                                      │
-│  静态 import（federation "main" remote）：              │
-│    ├── store       → main/store/index.ts              │
-│    ├── VueI18n     → main/language/index.ts           │
-│    ├── permission  → main/permission.ts               │
-│    └── initPlatform→ main/init-platform               │
+│  静态 import（"main" remote）：                        │
+│    store / VueI18n / permission / initPlatform        │
 │                                                      │
 │  动态 fetchRemoteComponent（"public" remote）：         │
-│    ├── plugins     → public./plugins/index.ts         │
-│    ├── router      → public./router/index.ts          │
-│    └── layout      → public./layout/index.vue         │
+│    plugins / router / layout                         │
 │                                                      │
 │  共享依赖（federation shared）：                        │
 │    vue / pinia / vue-router / element-plus            │
 │    @jhlc/common-core / @vueuse/core                   │
-└──────────────┬───────────────────────────┬────────────┘
-               │                           │
-    ┌──────────▼──────────┐    ┌───────────▼───────────┐
-    │ /assets/remoteEntry │    │ /sub/public/assets/    │
-    │   （完整版 main）     │    │  remoteEntry（增量版）  │
-    │ store/language/      │    │ plugins/router/layout  │
-    │ permission/platform  │    │                       │
-    └─────────────────────┘    └───────────────────────┘
+└────────────┬───────────────────────────┬────────────┘
+             │                           │
+  ┌──────────▼──────────┐    ┌───────────▼───────────┐
+  │ /assets/remoteEntry │    │ /sub/public/assets/    │
+  │ （完整版 main）       │    │ remoteEntry（增量版）   │
+  └─────────────────────┘    └───────────────────────┘
 ```
 
-### 关键设计
+关键设计：store/i18n/permission 走静态 import 保证 Pinia 实例共享；plugins/router/layout 动态加载；`optimizeDeps.exclude` 必须包含 `pinia`、`vue-router`（防双实例）。
 
-- **store / VueI18n / permission**：使用静态 `import from "main/..."` 从完整版 remoteEntry 加载，确保 Pinia 实例正确共享
-- **plugins / router / layout**：使用动态 `fetchRemoteComponent("public", ...)` 从增量版 remoteEntry 加载
-- **optimizeDeps.exclude**：`pinia` 和 `vue-router` 必须排除在 Vite 预打包之外，避免产生独立副本与 federation 共享实例冲突
+### 6.3 代码组织规范
 
----
+**三文件分离**（§3.1）；**命名**：文件 kebab-case / 组件 PascalCase / 变量 camelCase / 常量 UPPER_SNAKE / CSS 类 BEM；**样式**：
 
-## 代码组织规范
+- 视觉基线由 `@agile-team/wl-skills-ui/styles` 全局提供，业务不重复实现
+- 颜色一律 CSS 变量（`var(--el-color-primary)`），禁止硬编码色值
+- 自定义样式 `<style scoped>`；全局覆盖沉淀到 `src/assets/style/`
+- 不使用原子化 CSS（WindiCSS 已于 v1.2.0 移除，等效 preflight 在 `main.scss` 顶部）
 
-### 三文件分离（推荐）
+### 6.4 UI 规范（wl-skills-ui，已默认接入）
 
-每个页面推荐拆分为三个文件，职责清晰：
+| 层             | 接入点                                  | 作用                       |
+| -------------- | --------------------------------------- | -------------------------- |
+| L0 设计令牌    | `index.html` tokens link                | 品牌色/间距/圆角最先加载   |
+| L1-L3 皮肤骨架 | `main.scss` 首行 `@use "…/styles" as *` | EP / 封装组件 / 页面骨架   |
+| 运行时预设     | `main-core.ts` `installCommonPreset()`  | 状态/分类/编号字段自动渲染 |
+| 运行时守卫     | `main.ts` `runtime/auto`                | 溢出兜底等包级保护         |
+
+列渲染三件套 `defineColumns / renderOps / renderTagNode`（导入自 `@agile-team/wl-skills-ui/runtime`）。审计：`npx wl-ui all --project . --outFile report.md`（只读）。规范矩阵用 `npx wl-ui update` 增量维护，勿手改托管块。
+
+### 6.5 环境配置职责
+
+| 文件                                     | 用途                                              |
+| ---------------------------------------- | ------------------------------------------------- |
+| `project.config.json`                    | 项目标识、端口、五套环境默认值（唯一事实源）      |
+| `.env`                                   | 跨环境非敏感默认值（token 存储介质等）            |
+| `.env.local`                             | 本机临时覆盖，不提交（样例 `.env.local.example`） |
+| `vite/config/environments.ts` / `app.ts` | 只读取上述配置，不另立事实源                      |
+
+### 6.6 typecheck 口径与已知边界
+
+平台包 `@jhlc/common-core` 以 TS 源码发包，深路径引用会把平台源码拉进编译图（任何直接消费方都无法全量 vue-tsc 通过，生产项目同此结论）。`scripts/typecheck.mjs` 仅对本仓库 `src/`、`vite/` 错误失败退出，`node_modules` 平台错误计数豁免；平台包发布编译产物后可恢复裸 `vue-tsc`。
+
+### 6.7 目录结构
 
 ```
-views/xxx/list/
-├── index.vue       # 视图层：模板 + 组件引用，不含业务逻辑
-├── data.ts         # 数据层：API 调用 + 响应式数据 + 事件处理
-└── index.scss      # 样式层：scoped SCSS
+jh4j-ui-template/
+├── project.config.json      # 项目唯一可变配置入口
+├── template.manifest.json   # 模板标识/版本/参数契约（脚手架读取）
+├── vendor/xlsx-0.20.3.tgz   # 本地冻结依赖（SheetJS 官方包）
+├── scripts/
+│   ├── setup-project.mjs    # clone 与脚手架共用初始化入口
+│   ├── typecheck.mjs        # typecheck 卡门口径包装
+│   └── patch-common-core-dts.mjs  # postinstall 类型修补
+├── src/
+│   ├── api/                 # 业务接口
+│   ├── components/global|local/  # C_/c_ 组件样板（自动注册）
+│   ├── composables/         # 组合式函数
+│   ├── types/               # page.ts（页面类型重导出）/ jh4j-cloud.ts
+│   ├── util/                # system.ts（联邦加载）/ public-env.ts（运行时接管）等
+│   ├── views/<module>/      # 业务页面（module = 部署标识）
+│   ├── main.ts              # 入口：await publicEnvReady 后加载 main-core
+│   └── main-core.ts         # 核心初始化（Pinia/Router/Platform）
+├── vite/
+│   ├── config/              # base/server/context/plugins/build 分层配置
+│   └── plugins/
+│       ├── index.ts         # 插件聚合（federation 上游版）
+│       ├── build-artifacts.ts    # version.js + 简繁双产物
+│       ├── svg-icons-register.ts # SVG 雪碧图（虚拟模块契约）
+│       ├── gen-env-json.ts  # dist/env.json 身份卡
+│       └── shared/pages.ts  # 页面暴露登记处
+└── docs/                    # local-development.md / changelog.md
 ```
 
-**index.vue**（视图层）：
-
-```vue
-<template>
-  <div class="xxx-list">
-    <el-table :data="tableData" v-loading="loading">
-      <!-- 表格列 -->
-    </el-table>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { createPage } from "./data";
-const { tableData, loading, handleSearch, handleReset } = createPage();
-</script>
-
-<style lang="scss" scoped src="./index.scss" />
-```
-
-**data.ts**（数据层）：
-
-```ts
-import { ref, onMounted } from "vue";
-import { getListApi } from "@/api/xxx";
-
-export function createPage() {
-  const tableData = ref([]);
-  const loading = ref(false);
-
-  async function handleSearch() {
-    loading.value = true;
-    try {
-      const res = await getListApi({});
-      tableData.value = res.rows || [];
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  onMounted(() => handleSearch());
-
-  return { tableData, loading, handleSearch };
-}
-```
-
-### 命名规范
-
-| 类型      | 规范             | 示例                          |
-| --------- | ---------------- | ----------------------------- |
-| 文件名    | kebab-case       | `order-list.vue`              |
-| 组件名    | PascalCase       | `OrderList`                   |
-| 变量/函数 | camelCase        | `orderList`、`handleSearch`   |
-| 常量      | UPPER_SNAKE_CASE | `API_CONFIG`                  |
-| 类型/接口 | PascalCase       | `OrderItem`                   |
-| CSS 类名  | BEM              | `.order-list__header--active` |
-
-### 样式规范
-
-- 视觉基线（间距/圆角/配色/组件皮肤）由 `@agile-team/wl-skills-ui/styles` 全局提供，业务代码不重复实现
-- 颜色一律使用 Element Plus / wl-skills-ui 的 CSS 变量：`color: var(--el-color-primary)`，禁止硬编码历史色值
-- 自定义样式使用 `<style scoped>`，避免全局污染；全局覆盖优先沉淀到 `src/assets/style/`
-- 不使用原子化 CSS（WindiCSS 已于本版本移除，等效 preflight 见 `src/assets/style/main.scss` 顶部说明）
-
----
-
-## UI 规范（wl-skills-ui）
-
-模板已默认接入团队 UI 统一规范体系，新项目无需手工集成：
-
-| 层                   | 接入点                                                                          | 作用                                                                       |
-| -------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| L0 设计令牌          | `index.html` 引入 `wl-skills-ui/design/tokens/base.css`                         | 品牌色/间距/圆角最先加载                                                   |
-| L1-L3 组件皮肤与骨架 | `src/assets/style/main.scss` 首行 `@use "@agile-team/wl-skills-ui/styles" as *` | Element Plus、封装组件、list-page/detail-page 等布局骨架                   |
-| 运行时渲染预设       | `src/main-core.ts` 调用 `installCommonPreset()`                                 | 状态/分类/编号字段经 `defineColumns()` 自动渲染 Tag/徽标                   |
-| 示例页               | `src/views/template/demo/`                                                      | 列表页 + 详情页的标准写法示范（defineColumns + renderOps + renderTagNode） |
-
-补充说明：
-
-- 列定义统一用 `defineColumns()` 包裹，操作列用 `renderOps()`，状态字段用 `renderTagNode()`（导入自 `@agile-team/wl-skills-ui/runtime`）
-- AI 编码规范矩阵已由 `wl-ui init` 生成（`AGENTS.md` 路由 + 9 编辑器规则 + `.github/wl-skills-ui/` 触发提示 + `.mcp.json`），后续用 `npx wl-ui update` 增量更新，不要手改托管块
-- 版本钉死 1.11.1 与生产项目对齐；1.12 引入的 profile 体系尚无"native + jh 封装 + 联邦 AG Grid"混合形态，待上游补充后再升级
-- 风格审计：`npx wl-ui all --project . --outFile report.md`（只读扫描，不修改文件）
-
-### 内置组件样板
-
-| 组件              | 位置                     | 用途                                                                                                         |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `C_ParentView`    | `src/components/global/` | 路由父级占位（`<router-view />`）                                                                            |
-| `C_TagStatus`     | `src/components/global/` | 配置驱动状态标签；业务字典经 `registerStatusConfig("yourKey", [...])` 注册，内置 boolean/enable 两个通用字典 |
-| `C_Tree`          | `src/components/global/` | 通用树（Tab 切换 + 关键词过滤 + 节点插槽）                                                                   |
-| `C_ReportPreview` | `src/components/global/` | 打印报表平台远程预览（联邦加载 jh4j-cloud-report）                                                           |
-| `c_formModal`     | `src/components/local/`  | 三态表单弹窗（add/edit/view），基于 jh-dialog + BaseForm，支持列表选择器回填与测试数据填充                   |
-| `c_listModal`     | `src/components/local/`  | 单选列表选择弹窗（c_formModal 的选择器内核）                                                                 |
-| `c_formSections`  | `src/components/local/`  | 折叠区块表单（长表单分区）                                                                                   |
-| `c_spliterTitle`  | `src/components/local/`  | 分区标题条                                                                                                   |
-
-组件由 unplugin-vue-components 自动注册（`src/components` 深度扫描），直接在模板中使用，无需 import。
-
----
-
-## 质量保障
-
-| 命令                                | 时机                  | 说明                                                                            |
-| ----------------------------------- | --------------------- | ------------------------------------------------------------------------------- |
-| `pnpm check`                        | 手动 / CI             | typecheck + lint + format:check 一键全检                                        |
-| `pnpm typecheck`                    | pre-push 钩子自动执行 | 安装 wl-skills-kit 后自动升级为 kit 的 validate（含规范检测），未安装时优雅降级 |
-| `pnpm lint` / `pnpm lint:fix`       | 随时                  | ESLint 检查 / 自动修复                                                          |
-| `pnpm format` / `pnpm format:check` | 随时                  | Prettier 格式化 / 校验                                                          |
-| `npx wl-ui check --project .`       | 接入完整性            | wl-skills-ui 五项接入检查（I001-I005）                                          |
-| `pnpm template:validate`            | 模板维护时            | 模板契约自检（版本一致性、环境配置、客户标识扫描）                              |
-
-### 类型检查口径
-
-平台依赖 `@jhlc/common-core` 以 TS 源码形式发包，业务侧深路径引用会把平台源码拉进编译图并产生平台侧类型错误（生产项目实测同此结论）。因此 `pnpm typecheck`（`scripts/typecheck.mjs`）只对本仓库 `src/`、`vite/` 内的错误失败退出；`node_modules` 内的平台错误计数汇总后豁免。平台包发布编译产物后可移除该包装恢复裸 `vue-tsc`。
-
-### 环境管控（env.json 运行时接管）
-
-按《子应用环境管控规范（以 public 的 env.json 为准）》完成子应用集成，**门禁卡控由 wl-ui-public 中心化承担，子应用只做集成**：
-
-- `src/util/public-env.ts`：生产构建预载 `/sub/public/env.json`（5s 超时兜底），写入 `window.__WL_PUBLIC_ENV__`
-- `src/main.ts`：`await publicEnvReady` 后才动态加载 `main-core`，保证 axios 等模块顶层求值拿到的是 public 下发的环境
-- `vite/config/base.ts`：`process.env` define 运行时化——构建兜底值 + env.json 深合并（含 `OPTION` 嵌套），即使错误 mode 打包，运行时也会被 env.json 拉正
-- `/env-dev.json` 机制已退役：dev 直接使用 vite 上下文的 define 值
-
-### 构建产物身份卡
-
-每次构建会在 `dist/env.json` 生成部署溯源信息（`vite/plugins/gen-env-json.ts`）：应用标识、构建环境、commit、分支、流水线号、构建时间、工作区是否干净。部署后访问 `/sub/{module}/env.json` 即可核对部署身份。该文件纯展示，运行时零读取。
-
----
-
-## 常用开发模式
-
-### API 调用
-
-```ts
-import request from "@jhlc/common-core/src/util/request";
-// 或使用封装
-import { getAction, postAction } from "@jhlc/common-core/src/util/request";
-```
-
-### 权限控制
-
-```vue
-<!-- 使用 $auth 全局属性 -->
-<el-button v-if="$auth.hasPermi('xxx:order:add')">新增</el-button>
-```
-
-### 页签操作
-
-```ts
-// 关闭当前页签
-proxy.$tab.closePage();
-// 刷新当前页签
-proxy.$tab.refreshPage();
-```
-
-### Store 访问
-
-```ts
-import useUserStore from "@jhlc/common-core/src/store/user";
-import envConfig from "@jhlc/common-core/src/store/env-config";
-
-const user = useUserStore();
-console.log(user.name, user.roles);
-```
-
----
-
-## 环境配置
-
-### 配置职责
-
-| 文件                          | 用途                                 |
-| ----------------------------- | ------------------------------------ |
-| `project.config.json`         | 项目标识、标题、端口、五套环境默认值 |
-| `.env`                        | 无敏感信息的跨环境运行时默认值       |
-| `.env.local`                  | 本机地址、报表密钥等临时覆盖，不提交 |
-| `.env.local.example`          | `.env.local` 的键位说明样例          |
-| `vite/config/environments.ts` | 只负责读取结构化环境配置             |
-| `vite/config/app.ts`          | 只负责读取项目和本地联调配置         |
-
-### 服务地址配置
-
-```json
-{
-  "sit": {
-    "webUrl": "https://sit.example.internal",
-    "apiPrefix": "sit-api"
-  }
-}
-```
-
-配置支持完整域名或 `http://IP:端口`。Vite 会统一生成 `baseApi`、`webUrl`、`runtimeEnv` 和代理规则，构建产物默认部署到 `/sub/{module}/`。
-
----
-
-## 版本对齐
-
-> 以下依赖版本必须与目标平台的 public 工程保持一致，版本不对齐会导致 federation 共享失败。
-
-| 包                               | 版本          | 说明                            |
-| -------------------------------- | ------------- | ------------------------------- |
-| vue                              | ~3.2.25       | 核心框架                        |
-| pinia                            | ~2.0.14       | 状态管理（federation shared）   |
-| vue-router                       | 4.4.3         | 路由（federation shared）       |
-| element-plus                     | 2.2.6-prod.3  | UI 组件（federation shared）    |
-| @jhlc/common-core                | 3.1.0-prod.14 | 平台共享包（federation shared） |
-| @originjs/vite-plugin-federation | 1.4.1-jh.3    | 微前端插件                      |
-| @agile-team/wl-skills-ui         | 1.11.1        | UI 统一规范（与生产项目对齐）   |
-| vite                             | 4.4.9         | 构建工具                        |
-| typescript                       | ^5.4.0        | 类型检查                        |
-
----
-
-## 常见问题
-
-### 白屏 / remoteEntry.js 404
-
-**原因**：远程服务器不可达，或 proxy 配置错误。
-**排查**：检查 `project.config.json` 中目标环境的 `webUrl` 是否可访问，并核对 `server.ts` 代理配置。
-
-### "getActivePinia()" 错误
-
-**原因**：`pinia` 被 Vite 预打包到独立 chunk，产生双实例。
-**解法**：确保 `vite.config.ts` 中 `optimizeDeps.exclude` 包含 `"pinia"` 和 `"vue-router"`。
-
-### 本地联调 public 改了代码没生效
-
-**原因**：浏览器缓存了旧 remoteEntry.js。
-**解法**：DevTools → Network → 勾选 `Disable cache`，再刷新。或 Ctrl+F5 强刷。
-
-### systemApp / agGridApp 加载失败
-
-这两个远程模块由远程服务器提供，本地一般不启动。确认当前目标环境的远程服务地址可访问。
-
-### 新增页面后菜单看不到
-
-页面注册后需要后台配置菜单路由。联系管理员在系统管理中添加对应菜单项。
-
-### BaseQuery / BaseTable / jh-pagination 从哪里来
-
-这些平台组件由 public 工程的 `plugins/index.ts` 在运行时全局注册，业务页面直接在模板中使用，无需 import（示例页 `src/views/template/demo/list/index.vue` 即此写法）。
-
-### 构建被 [env-guard] 拦截
-
-当前分支是标准环境分支（dev/sit/uat/pre/prd）时，只能构建同环境的包。切换到对应环境执行 `pnpm build:{env}`，或在正确的分支上构建。
-
-### 为什么没有 WindiCSS / 原子化 CSS
-
-模板曾内置 WindiCSS，但经全量扫描确认业务页面无原子类消费方，safe-list 生成数千死类 CSS，已于 v1.2.0 移除。等效的 preflight 样式重置保留在 `src/assets/style/main.scss` 顶部，视觉零变化。
-
----
-
-## 更新记录
-
-见 [docs/changelog.md](docs/changelog.md)：每个版本的特性回移说明、破坏性变更与后续升级路线（env.json 运行时接管、E2E 测试基建、wl-skills-kit 特性化接入等）。
+### 6.8 常见问题
+
+| 症状                         | 原因与处置                                                                |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| 白屏 / remoteEntry 404       | 远程不可达或代理错：核对环境 `webUrl` 与 `vite/config/server.ts`          |
+| "getActivePinia()" 错误      | pinia 被预打包成双实例：`optimizeDeps.exclude` 须含 `pinia`、`vue-router` |
+| 本地 public 改动不生效       | 浏览器缓存旧 remoteEntry：Network 勾选 Disable cache 或 Ctrl+F5           |
+| systemApp/agGridApp 加载失败 | 远程模块由服务端提供，确认目标环境可访问                                  |
+| 新页面菜单看不到             | 先在 `shared/pages.ts` 注册，再请管理员配菜单                             |
+| Base 组件从哪来              | public 的 plugins 运行时全局注册，直接用（见示例页）                      |
+| 为什么没有 WindiCSS          | v1.2.0 已移除（零消费方 + 数千死类），preflight 等效迁移至 `main.scss`    |
+
+### 6.9 更新记录
+
+见 [docs/changelog.md](docs/changelog.md)：版本特性、破坏性变更与升级路线（E2E 基建、wl-skills-kit 特性化等）。升级基线标记：`git tag v1.3.0`（Vue 3.2 / Vite 4 末版）。
