@@ -3,6 +3,7 @@ import "reflect-metadata";
 import AppVue from "./App.vue";
 import { initPlatform } from "main/init-platform";
 import envConfig from "@jhlc/common-core/src/store/env-config";
+import { resolveRuntimeEnv } from "@/util/public-env";
 
 import "element-plus/dist/index.css";
 import "./assets/style/element.scss";
@@ -38,15 +39,16 @@ export default async function () {
 
   app.use(store);
 
-  // 环境唯一事实源：生产为 wl-ui-public 的 env.json（经 define 运行时化
-  // 深合并进 process.env），dev 为本地 vite 上下文兜底值。已退役 /env-dev.json。
+  // 环境唯一事实源：生产为 wl-ui-public 的 env.json（入口已 await 预载），
+  // dev 为本地 vite 上下文兜底值。每次读取都返回"兜底值 + env.json 深合并"
+  // 的最新视图（resolveRuntimeEnv），已退役 /env-dev.json。
   envConfig().getProcessEnv = function () {
-    return process.env;
+    return resolveRuntimeEnv(process.env);
   };
 
   // 路由守卫首次导航时就会读取 token。必须在请求实例、远程模块和
   // router 初始化之前确定存储介质，避免整页刷新时误按 Cookie 查找。
-  if (process.env.VUE_APP_TOKEN_LOCALSTORAGE) {
+  if (resolveRuntimeEnv(process.env).VUE_APP_TOKEN_LOCALSTORAGE) {
     envConfig().tokenStorage = "localStorage";
   }
 

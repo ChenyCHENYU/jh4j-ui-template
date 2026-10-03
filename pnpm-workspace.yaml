@@ -8,6 +8,7 @@ minimumReleaseAgeExclude:
 # （2026-10 工具链升级后不再需要 @swc/core：top-level await 由 ES2022
 # 原生支持，vite-plugin-top-level-await 已移除。）
 allowBuilds:
+  "@swc/core": set this to true or false
   esbuild: true
   vue-demi: true
 

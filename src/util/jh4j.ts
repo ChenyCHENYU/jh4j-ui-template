@@ -1,3 +1,5 @@
+import { resolveRuntimeEnv } from "@/util/public-env";
+
 export const getEnv = function (): {
   env: "dev" | "sit" | "uat" | "pre" | "prd" | "prod";
   isBuild: boolean;
@@ -11,7 +13,7 @@ export const getEnv = function (): {
   version: string;
 } {
   const ret = {
-    ...(process.env.OPTION as unknown as Record<string, any>)
+    ...(resolveRuntimeEnv(process.env).OPTION as unknown as Record<string, any>)
   };
 
   ret.webUrl = ret.webUrl.replace(/\_/g, ".");

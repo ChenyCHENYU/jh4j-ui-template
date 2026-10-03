@@ -46,26 +46,19 @@ const OPTIMIZED_DEPENDENCIES = [
 ];
 
 /**
- * process.env 运行时化：构建值仅兜底，运行时以 wl-ui-public 部署的
- * env.json 深合并覆盖（含 OPTION 嵌套合并）。错误 mode 打包的兜底值
- * 也会被 env.json 拉正，串线防控由 public 中心化承担。
+ * process.env 的运行时合并视图由 src/util/public-env.ts 的
+ * resolveRuntimeEnv 提供（构建兜底值 + /sub/public/env.json 深合并）。
  */
-function buildRuntimeProcessEnvDefine(runtimeEnv: RuntimeEnvironment): string {
-  return `(function () {
-  var baked = ${JSON.stringify(runtimeEnv)};
-  var runtime = (typeof window !== "undefined" && window.__WL_PUBLIC_ENV__) || null;
-  if (!runtime) return baked;
-  return Object.assign({}, baked, runtime, {
-    OPTION: Object.assign({}, baked.OPTION, runtime.OPTION || {})
-  });
-})()`;
-}
 
 export function createBaseConfig(context: ViteContext): UserConfig {
   return {
     appType: "spa",
+    // 环境兜底值静态注入（Vite 7 的 define 只接受实体名或 JS 字面量，
+    // 不再支持 IIFE 表达式）。运行时 env.json 深合并改经平台官方通道
+    // envConfig().getProcessEnv 完成（见 main-core.ts / public-env.ts），
+    // 语义等价：每次读取都是"构建兜底 + public 下发"的合并视图。
     define: {
-      "process.env": buildRuntimeProcessEnvDefine(context.runtimeEnv)
+      "process.env": context.runtimeEnv
     },
     base: context.isBuild ? `/sub/${APP_CONFIG.moduleName}/` : "/",
     css: {
